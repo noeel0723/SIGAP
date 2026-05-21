@@ -1,28 +1,44 @@
 # sigap_warga.spec
 # Konfigurasi PyInstaller untuk build Warga
-# Jalankan: pyinstaller sigap_warga.spec
+# Jalankan dari ROOT proyek: pyinstaller packaging/sigap_warga.spec
 
 # -*- mode: python ; coding: utf-8 -*-
 
+import os
+import customtkinter
+
 block_cipher = None
 
+# Path root proyek (satu level di atas folder packaging/)
+ROOT_DIR = os.path.abspath(os.path.join(SPECPATH, '..'))
+CTK_DIR = os.path.dirname(customtkinter.__file__)
+
 a = Analysis(
-    ['main.py'],
-    pathex=[],
+    [os.path.join(ROOT_DIR, 'main.py')],
+    pathex=[ROOT_DIR],
     binaries=[],
     datas=[
-        ('assets', 'assets'),
+        (os.path.join(ROOT_DIR, 'assets'), 'assets'),
+        (os.path.join(ROOT_DIR, 'config'), 'config'),
+        (CTK_DIR, 'customtkinter'),
     ],
     hiddenimports=[
         'mysql.connector',
+        'mysql.connector.plugins',
+        'mysql.connector.plugins.caching_sha2_password',
+        'mysql.connector.plugins.mysql_native_password',
         'bcrypt',
+        'bcrypt._bcrypt',
         'customtkinter',
+        'PIL',
+        'PIL._tkinter_finder',
     ],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
     excludes=[
-        'matplotlib',  # Warga tidak perlu matplotlib
+        'matplotlib',  # Warga tidak perlu matplotlib (grafik hanya untuk Admin Kota)
+        'numpy',
     ],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
@@ -48,7 +64,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon='assets/icons/sigap_icon.ico',
+    # icon=os.path.join(ROOT_DIR, 'assets', 'icons', 'sigap_icon.ico'),
 )
 
 coll = COLLECT(
