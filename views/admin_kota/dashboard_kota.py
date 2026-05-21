@@ -75,10 +75,10 @@ class DashboardKota(ctk.CTkFrame):
 
         self.kota_cards = {}
         card_defs = [
-            {"label": "Total Laporan", "color": "#1E88E5", "key": "total"},
-            {"label": "Menunggu", "color": "#FFA726", "key": "menunggu"},
-            {"label": "Dalam Proses", "color": "#AB47BC", "key": "proses"},
-            {"label": "Selesai", "color": "#66BB6A", "key": "selesai"},
+            {"label": "Total Laporan", "key": "total"},
+            {"label": "Menunggu", "key": "menunggu"},
+            {"label": "Dalam Proses", "key": "proses"},
+            {"label": "Selesai", "key": "selesai"},
         ]
         for i, cd in enumerate(card_defs):
             card = ctk.CTkFrame(cards_frame, corner_radius=12,
@@ -87,7 +87,7 @@ class DashboardKota(ctk.CTkFrame):
             card.grid(row=0, column=i, sticky="ew", padx=4)
             val = ctk.CTkLabel(card, text="0",
                                font=ctk.CTkFont(size=28, weight="bold"),
-                               text_color=cd["color"])
+                               text_color=("black", "white"))
             val.pack(padx=18, pady=(15, 2))
             self.kota_cards[cd["key"]] = val
             ctk.CTkLabel(card, text=cd["label"],

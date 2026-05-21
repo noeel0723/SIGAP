@@ -78,13 +78,9 @@ class Sidebar(ctk.CTkFrame):
             )
             btn.pack(fill="x", pady=2)
 
-        # ── Spacer ──
-        spacer = ctk.CTkFrame(self, fg_color="transparent")
-        spacer.pack(fill="both", expand=True)
-
         # ── Bottom Section ──
         bottom_frame = ctk.CTkFrame(self, fg_color="transparent")
-        bottom_frame.pack(fill="x", padx=10, pady=(5, 10))
+        bottom_frame.pack(side="bottom", fill="x", padx=10, pady=(5, 20))
 
         # Toggle tema
         self.theme_var = ctk.StringVar(value=ctk.get_appearance_mode())
@@ -105,17 +101,21 @@ class Sidebar(ctk.CTkFrame):
         # Tombol Logout
         logout_btn = ctk.CTkButton(
             bottom_frame,
-            text="  🚪  Keluar",
+            text="  🚪  Log Out",
             anchor="w",
             height=36,
             corner_radius=8,
-            font=ctk.CTkFont(size=12),
-            fg_color="transparent",
-            text_color=("#E53935", "#EF5350"),
-            hover_color=("gray80", "gray25"),
+            font=ctk.CTkFont(size=12, weight="bold"),
+            fg_color="#EF5350",
+            text_color="white",
+            hover_color="#E53935",
             command=self._logout
         )
         logout_btn.pack(fill="x", pady=2)
+
+        # ── Spacer ──
+        spacer = ctk.CTkFrame(self, fg_color="transparent")
+        spacer.pack(side="top", fill="both", expand=True)
 
     def _toggle_theme(self):
         current = ctk.get_appearance_mode()

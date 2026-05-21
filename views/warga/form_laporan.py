@@ -8,23 +8,18 @@ from config.settings import KATEGORI_LAPORAN
 from config.wilayah import get_semua_kecamatan, get_kelurahan_by_kecamatan
 
 
-class FormLaporan(ctk.CTkToplevel):
-    """Dialog modal form pembuatan laporan baru."""
+class FormLaporan(ctk.CTkFrame):
+    """Form pembuatan laporan baru terintegrasi ke dalam frame utama."""
 
-    def __init__(self, parent, app, on_success=None, **kwargs):
-        super().__init__(parent, **kwargs)
+    def __init__(self, parent, app, on_success=None, on_cancel=None, **kwargs):
+        super().__init__(parent, fg_color="transparent", **kwargs)
         self.app = app
         self.laporan_controller = LaporanController(app.db)
         self.on_success = on_success
-
-        self.title("Buat Laporan Baru")
-        self.geometry("580x700")
-        self.resizable(False, False)
-        self.grab_set()
-        self.focus()
+        self.on_cancel = on_cancel
 
         # ── Scrollable content ──
-        scroll = ctk.CTkScrollableFrame(self, fg_color="transparent")
+        scroll = ctk.CTkScrollableFrame(self, fg_color=("white", "gray17"), corner_radius=12)
         scroll.pack(fill="both", expand=True, padx=25, pady=20)
 
         # Title
@@ -125,15 +120,15 @@ class FormLaporan(ctk.CTkToplevel):
             hover_color=("gray65", "gray40"),
             text_color=("gray20", "gray90"),
             width=120,
-            command=self.destroy
+            command=self._cancel
         ).pack(side="right", padx=(8, 0))
 
         self.submit_btn = ctk.CTkButton(
             btn_frame, text="📤  Kirim Laporan",
             height=40, corner_radius=8,
             font=ctk.CTkFont(size=13, weight="bold"),
-            fg_color=("#1565C0", "#1E88E5"),
-            hover_color=("#0D47A1", "#1565C0"),
+            fg_color=("#673AB7", "#7E57C2"),
+            hover_color=("#512DA8", "#673AB7"),
             width=180,
             command=self._submit
         )
@@ -147,6 +142,12 @@ class FormLaporan(ctk.CTkToplevel):
         else:
             self.kelurahan_combo.configure(values=["Tidak ada data"])
             self.kelurahan_combo.set("Tidak ada data")
+
+    def _cancel(self):
+        if self.on_cancel:
+            self.on_cancel()
+        else:
+            self.destroy()
 
     def _submit(self):
         kategori = self.kategori_var.get()
@@ -167,9 +168,9 @@ class FormLaporan(ctk.CTkToplevel):
         )
 
         if result["success"]:
-            messagebox.showinfo("Berhasil", result["message"], parent=self)
+            messagebox.showinfo("Berhasil", result["message"], parent=self.winfo_toplevel())
             if self.on_success:
                 self.on_success()
-            self.destroy()
+            self._cancel()
         else:
-            messagebox.showerror("Gagal", result["message"], parent=self)
+            messagebox.showerror("Gagal", result["message"], parent=self.winfo_toplevel())

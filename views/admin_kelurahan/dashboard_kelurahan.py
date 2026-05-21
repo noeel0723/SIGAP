@@ -51,11 +51,11 @@ class DashboardKelurahan(ctk.CTkFrame):
             cards_frame.grid_columnconfigure(i, weight=1)
 
         self.card_configs = [
-            {"label": "Total", "color": "#1E88E5", "key": "total"},
-            {"label": "Menunggu", "color": "#FFA726", "key": "menunggu"},
-            {"label": "Diproses", "color": "#AB47BC", "key": "diproses"},
-            {"label": "Selesai", "color": "#66BB6A", "key": "selesai"},
-            {"label": "Ditolak", "color": "#EF5350", "key": "ditolak"},
+            {"label": "Total", "key": "total"},
+            {"label": "Menunggu", "key": "menunggu"},
+            {"label": "Diproses", "key": "diproses"},
+            {"label": "Selesai", "key": "selesai"},
+            {"label": "Ditolak", "key": "ditolak"},
         ]
         self.card_values = {}
         for i, cc in enumerate(self.card_configs):
@@ -64,7 +64,7 @@ class DashboardKelurahan(ctk.CTkFrame):
                                 border_width=1, border_color=("gray85", "gray28"))
             card.grid(row=0, column=i, sticky="ew", padx=4)
             val = ctk.CTkLabel(card, text="0", font=ctk.CTkFont(size=24, weight="bold"),
-                               text_color=cc["color"])
+                               text_color=("black", "white"))
             val.pack(padx=14, pady=(12, 2))
             self.card_values[cc["key"]] = val
             ctk.CTkLabel(card, text=cc["label"], font=ctk.CTkFont(size=10),

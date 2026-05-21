@@ -23,19 +23,19 @@ class DashboardWarga(ctk.CTkFrame):
         self.grid_rowconfigure(0, weight=1)
 
         sidebar = Sidebar(self, app=app, menu_items=[
-            {"icon": "🏠", "label": "Dashboard", "command": self._refresh_data},
+            {"icon": "🏠", "label": "Dashboard", "command": self._back_to_dashboard},
             {"icon": "📝", "label": "Buat Laporan", "command": self._show_form_laporan},
             {"icon": "🔄", "label": "Refresh Data", "command": self._refresh_data},
         ])
         sidebar.grid(row=0, column=0, sticky="nsw")
 
         # ── Content Area ──
-        content = ctk.CTkFrame(self, fg_color="transparent")
-        content.grid(row=0, column=1, sticky="nsew", padx=20, pady=20)
-        content.grid_columnconfigure(0, weight=1)
+        self.content = ctk.CTkFrame(self, fg_color="transparent")
+        self.content.grid(row=0, column=1, sticky="nsew", padx=20, pady=20)
+        self.content.grid_columnconfigure(0, weight=1)
 
         # Header
-        header_frame = ctk.CTkFrame(content, fg_color="transparent")
+        header_frame = ctk.CTkFrame(self.content, fg_color="transparent")
         header_frame.grid(row=0, column=0, sticky="ew", pady=(0, 15))
 
         ctk.CTkLabel(
@@ -47,13 +47,13 @@ class DashboardWarga(ctk.CTkFrame):
             header_frame, text="➕  Buat Laporan",
             height=36, corner_radius=8,
             font=ctk.CTkFont(size=13, weight="bold"),
-            fg_color=("#1565C0", "#1E88E5"),
-            hover_color=("#0D47A1", "#1565C0"),
+            fg_color=("#673AB7", "#7E57C2"),
+            hover_color=("#512DA8", "#673AB7"),
             command=self._show_form_laporan
         ).pack(side="right")
 
         # ── Summary Cards ──
-        cards_frame = ctk.CTkFrame(content, fg_color="transparent")
+        cards_frame = ctk.CTkFrame(self.content, fg_color="transparent")
         cards_frame.grid(row=1, column=0, sticky="ew", pady=(0, 15))
         for i in range(4):
             cards_frame.grid_columnconfigure(i, weight=1)
@@ -75,7 +75,7 @@ class DashboardWarga(ctk.CTkFrame):
             val_lbl = ctk.CTkLabel(
                 card, text="0",
                 font=ctk.CTkFont(size=28, weight="bold"),
-                text_color=card_info["color"]
+                text_color=("black", "white")
             )
             val_lbl.pack(padx=18, pady=(15, 2))
             self.card_values[card_info["key"]] = val_lbl
@@ -88,13 +88,13 @@ class DashboardWarga(ctk.CTkFrame):
 
         # ── Tabel Laporan ──
         table_label = ctk.CTkLabel(
-            content, text="📋  Riwayat Laporan Anda",
+            self.content, text="📋  Riwayat Laporan Anda",
             font=ctk.CTkFont(size=16, weight="bold"), anchor="w"
         )
         table_label.grid(row=2, column=0, sticky="w", pady=(5, 8))
 
         self.table = DataTable(
-            content,
+            self.content,
             columns=[
                 {"key": "id", "label": "#", "width": 40, "max_len": 6},
                 {"key": "judul", "label": "Judul Laporan", "width": 200, "max_len": 35},
@@ -106,10 +106,10 @@ class DashboardWarga(ctk.CTkFrame):
             on_row_click=self._show_detail
         )
         self.table.grid(row=3, column=0, sticky="nsew", pady=(0, 10))
-        content.grid_rowconfigure(3, weight=1)
+        self.content.grid_rowconfigure(3, weight=1)
 
         # ── Detail Panel ──
-        self.detail_frame = ctk.CTkFrame(content, corner_radius=12,
+        self.detail_frame = ctk.CTkFrame(self.content, corner_radius=12,
                                          fg_color=("white", "gray17"),
                                          border_width=1,
                                          border_color=("gray85", "gray28"))
@@ -117,6 +117,11 @@ class DashboardWarga(ctk.CTkFrame):
         self.detail_frame.grid_remove()  # Hidden by default
 
         # Load data
+        self.form_frame = None
+        self._refresh_data()
+
+    def _back_to_dashboard(self):
+        self._close_form_laporan()
         self._refresh_data()
 
     def _refresh_data(self):
@@ -139,7 +144,26 @@ class DashboardWarga(ctk.CTkFrame):
         self.detail_frame.grid_remove()
 
     def _show_form_laporan(self):
-        FormLaporan(self, app=self.app, on_success=self._refresh_data)
+        self.content.grid_remove()
+        if self.form_frame is None:
+            self.form_frame = FormLaporan(
+                self, 
+                app=self.app, 
+                on_success=self._on_form_success,
+                on_cancel=self._close_form_laporan
+            )
+        self.form_frame.grid(row=0, column=1, sticky="nsew", padx=20, pady=20)
+
+    def _close_form_laporan(self):
+        if self.form_frame:
+            self.form_frame.grid_remove()
+            self.form_frame.destroy()
+            self.form_frame = None
+        self.content.grid()
+
+    def _on_form_success(self):
+        self._refresh_data()
+        self._close_form_laporan()
 
     def _show_detail(self, laporan: dict):
         """Tampilkan detail laporan dan timeline tracking."""
