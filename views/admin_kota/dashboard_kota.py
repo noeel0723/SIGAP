@@ -52,6 +52,8 @@ class DashboardKota(ctk.CTkFrame):
         self.laporan_ctrl = LaporanController(app.db)
         self.selected_laporan = None
         self._chart_canvases = []          # simpan referensi canvas agar GC-safe
+        self._current_page = "analitik"    # track halaman aktif
+        self._theme_updating = False       # guard re-render saat ganti tema
 
         # ── Layout: Sidebar | Content ──
         self.grid_columnconfigure(1, weight=1)
@@ -71,6 +73,17 @@ class DashboardKota(ctk.CTkFrame):
         )
         self.content.grid(row=0, column=1, sticky="nsew")
 
+        self._show_analitik()
+
+    # ── Override: re-render chart saat tema berubah ──
+    def _set_appearance_mode(self, mode_string):
+        super()._set_appearance_mode(mode_string)
+        if self._current_page == "analitik" and not self._theme_updating:
+            self._theme_updating = True
+            self.after(250, self._rerender_theme)
+
+    def _rerender_theme(self):
+        self._theme_updating = False
         self._show_analitik()
 
     # ──────────────────────────────────────
@@ -111,6 +124,7 @@ class DashboardKota(ctk.CTkFrame):
     # ══════════════════════════════════════════════
 
     def _show_analitik(self):
+        self._current_page = "analitik"
         self._clear()
         c = self.content
         dark = ctk.get_appearance_mode() == "Dark"
@@ -171,7 +185,7 @@ class DashboardKota(ctk.CTkFrame):
             card.grid(row=0, column=i, sticky="ew", padx=5)
 
             inn = ctk.CTkFrame(card, fg_color="transparent")
-            inn.pack(fill="x", padx=18, pady=16)
+            inn.pack(fill="x", padx=14, pady=12)
 
             top = ctk.CTkFrame(inn, fg_color="transparent")
             top.pack(fill="x")
@@ -181,8 +195,8 @@ class DashboardKota(ctk.CTkFrame):
                          text_color=("gray82", "gray32")).pack(side="right")
 
             ctk.CTkLabel(inn, text=f"{val:02d}",
-                         font=ctk.CTkFont(size=32, weight="bold"),
-                         text_color=clr, anchor="w").pack(anchor="w", pady=(6, 0))
+                         font=ctk.CTkFont(size=26, weight="bold"),
+                         text_color=clr, anchor="w").pack(anchor="w", pady=(4, 0))
 
         # ── Chart Row 1 : Tren Bulanan (60 %) + Sebaran Status (40 %) ──
         row1 = ctk.CTkFrame(c, fg_color="transparent")
@@ -199,7 +213,7 @@ class DashboardKota(ctk.CTkFrame):
         line_card.grid(row=0, column=0, sticky="nsew", padx=(0, 7))
 
         li = ctk.CTkFrame(line_card, fg_color="transparent")
-        li.pack(fill="x", padx=20, pady=(16, 4))
+        li.pack(fill="x", padx=16, pady=(12, 2))
         ctk.CTkLabel(li, text="📈  Tren Bulanan",
                      font=ctk.CTkFont(size=14, weight="bold"),
                      anchor="w").pack(side="left")
@@ -207,8 +221,8 @@ class DashboardKota(ctk.CTkFrame):
                      font=ctk.CTkFont(size=11),
                      text_color=("gray50", "gray60")).pack(side="right")
 
-        line_area = ctk.CTkFrame(line_card, fg_color="transparent", height=280)
-        line_area.pack(fill="x", padx=10, pady=(0, 10))
+        line_area = ctk.CTkFrame(line_card, fg_color="transparent", height=185)
+        line_area.pack(fill="x", padx=8, pady=(0, 8))
         line_area.pack_propagate(False)
 
         bulanan = stats.get("bulanan", [])
@@ -221,19 +235,19 @@ class DashboardKota(ctk.CTkFrame):
             x_data = bulan_names[:6]
             y_data = [0] * 6
 
-        fig_l = Figure(figsize=(6.5, 3.2), dpi=100)
+        fig_l = Figure(figsize=(5.5, 2.0), dpi=100)
         fig_l.set_facecolor(mc["fig_face"])
         ax_l = fig_l.add_subplot(111)
         ax_l.set_facecolor(mc["ax_face"])
-        ax_l.plot(x_data, y_data, color=CHART_LINE, linewidth=2.5,
-                  marker="o", markersize=6, zorder=3)
+        ax_l.plot(x_data, y_data, color=CHART_LINE, linewidth=2,
+                  marker="o", markersize=4, zorder=3)
         ax_l.fill_between(x_data, y_data, alpha=0.15, color=CHART_LINE)
-        ax_l.set_ylabel("Jumlah", color=mc["text"], fontsize=9)
-        ax_l.tick_params(colors=mc["tick"], labelsize=8)
+        ax_l.set_ylabel("Jumlah", color=mc["text"], fontsize=8)
+        ax_l.tick_params(colors=mc["tick"], labelsize=7)
         ax_l.grid(True, alpha=0.25, color=mc["grid"])
         for sp in ax_l.spines.values():
             sp.set_visible(False)
-        fig_l.tight_layout(pad=1.5)
+        fig_l.tight_layout(pad=1.0)
 
         cv_l = FigureCanvasTkAgg(fig_l, master=line_area)
         cv_l.draw()
@@ -247,13 +261,13 @@ class DashboardKota(ctk.CTkFrame):
         donut_card.grid(row=0, column=1, sticky="nsew", padx=(7, 0))
 
         di = ctk.CTkFrame(donut_card, fg_color="transparent")
-        di.pack(fill="x", padx=20, pady=(16, 4))
+        di.pack(fill="x", padx=16, pady=(12, 2))
         ctk.CTkLabel(di, text="🍩  Sebaran Status",
                      font=ctk.CTkFont(size=14, weight="bold"),
                      anchor="w").pack(side="left")
 
-        donut_area = ctk.CTkFrame(donut_card, fg_color="transparent", height=280)
-        donut_area.pack(fill="x", padx=10, pady=(0, 10))
+        donut_area = ctk.CTkFrame(donut_card, fg_color="transparent", height=185)
+        donut_area.pack(fill="x", padx=8, pady=(0, 8))
         donut_area.pack_propagate(False)
 
         per_status = stats.get("per_status", [])
@@ -266,28 +280,28 @@ class DashboardKota(ctk.CTkFrame):
             d_values = [1]
             d_colors = ["#CCCCCC"]
 
-        fig_d = Figure(figsize=(4.0, 3.2), dpi=100)
+        fig_d = Figure(figsize=(3.2, 2.0), dpi=100)
         fig_d.set_facecolor(mc["fig_face"])
         ax_d = fig_d.add_subplot(111)
         ax_d.set_facecolor(mc["ax_face"])
         wedges, texts, autotexts = ax_d.pie(
             d_values, labels=None, colors=d_colors,
             autopct='%1.0f%%', startangle=90,
-            wedgeprops=dict(width=0.42, edgecolor=mc["fig_face"], linewidth=2),
-            textprops=dict(color=mc["text"], fontsize=8),
+            wedgeprops=dict(width=0.42, edgecolor=mc["fig_face"], linewidth=1.5),
+            textprops=dict(color=mc["text"], fontsize=7),
             pctdistance=0.78
         )
         # Center text
         ax_d.text(0, 0.08, f"{total}", ha="center", va="center",
-                  fontsize=22, fontweight="bold", color=mc["text"])
-        ax_d.text(0, -0.14, "Total", ha="center", va="center",
-                  fontsize=9, color=mc["tick"])
+                  fontsize=18, fontweight="bold", color=mc["text"])
+        ax_d.text(0, -0.12, "Total", ha="center", va="center",
+                  fontsize=8, color=mc["tick"])
         # Legend below
         ax_d.legend(wedges, d_labels, loc="lower center",
-                    bbox_to_anchor=(0.5, -0.18), ncol=3,
-                    fontsize=7, frameon=False,
+                    bbox_to_anchor=(0.5, -0.15), ncol=3,
+                    fontsize=6, frameon=False,
                     labelcolor=mc["text"])
-        fig_d.tight_layout(pad=0.5)
+        fig_d.tight_layout(pad=0.3)
 
         cv_d = FigureCanvasTkAgg(fig_d, master=donut_area)
         cv_d.draw()
@@ -307,13 +321,13 @@ class DashboardKota(ctk.CTkFrame):
         kat_card.grid(row=0, column=0, sticky="nsew", padx=(0, 7))
 
         ki = ctk.CTkFrame(kat_card, fg_color="transparent")
-        ki.pack(fill="x", padx=20, pady=(16, 4))
+        ki.pack(fill="x", padx=16, pady=(12, 2))
         ctk.CTkLabel(ki, text="📊  Laporan per Kategori",
                      font=ctk.CTkFont(size=14, weight="bold"),
                      anchor="w").pack(side="left")
 
-        kat_area = ctk.CTkFrame(kat_card, fg_color="transparent", height=260)
-        kat_area.pack(fill="x", padx=10, pady=(0, 10))
+        kat_area = ctk.CTkFrame(kat_card, fg_color="transparent", height=175)
+        kat_area.pack(fill="x", padx=8, pady=(0, 8))
         kat_area.pack_propagate(False)
 
         per_kategori = stats.get("per_kategori", [])
@@ -324,15 +338,15 @@ class DashboardKota(ctk.CTkFrame):
             k_labels = ["(kosong)"]
             k_values = [0]
 
-        fig_k = Figure(figsize=(5.0, 3.0), dpi=100)
+        fig_k = Figure(figsize=(4.5, 1.9), dpi=100)
         fig_k.set_facecolor(mc["fig_face"])
         ax_k = fig_k.add_subplot(111)
         ax_k.set_facecolor(mc["ax_face"])
         bars_k = ax_k.barh(k_labels, k_values, color=CHART_BAR1,
                            edgecolor="white", linewidth=0.5, height=0.55)
         ax_k.invert_yaxis()
-        ax_k.tick_params(colors=mc["tick"], labelsize=8)
-        ax_k.set_xlabel("Jumlah", color=mc["text"], fontsize=9)
+        ax_k.tick_params(colors=mc["tick"], labelsize=7)
+        ax_k.set_xlabel("Jumlah", color=mc["text"], fontsize=8)
         for sp in ax_k.spines.values():
             sp.set_visible(False)
         ax_k.grid(axis="x", alpha=0.2, color=mc["grid"])
@@ -341,8 +355,8 @@ class DashboardKota(ctk.CTkFrame):
             w = bar.get_width()
             if w > 0:
                 ax_k.text(w + 0.2, bar.get_y() + bar.get_height() / 2,
-                          f"{int(w)}", va="center", fontsize=8, color=mc["text"])
-        fig_k.tight_layout(pad=1.5)
+                          f"{int(w)}", va="center", fontsize=7, color=mc["text"])
+        fig_k.tight_layout(pad=1.0)
 
         cv_k = FigureCanvasTkAgg(fig_k, master=kat_area)
         cv_k.draw()
@@ -356,13 +370,13 @@ class DashboardKota(ctk.CTkFrame):
         kec_card.grid(row=0, column=1, sticky="nsew", padx=(7, 0))
 
         kci = ctk.CTkFrame(kec_card, fg_color="transparent")
-        kci.pack(fill="x", padx=20, pady=(16, 4))
+        kci.pack(fill="x", padx=16, pady=(12, 2))
         ctk.CTkLabel(kci, text="🏢  Laporan per Kecamatan",
                      font=ctk.CTkFont(size=14, weight="bold"),
                      anchor="w").pack(side="left")
 
-        kec_area = ctk.CTkFrame(kec_card, fg_color="transparent", height=260)
-        kec_area.pack(fill="x", padx=10, pady=(0, 10))
+        kec_area = ctk.CTkFrame(kec_card, fg_color="transparent", height=175)
+        kec_area.pack(fill="x", padx=8, pady=(0, 8))
         kec_area.pack_propagate(False)
 
         per_kecamatan = stats.get("per_kecamatan", [])
@@ -373,15 +387,15 @@ class DashboardKota(ctk.CTkFrame):
             kc_labels = ["(kosong)"]
             kc_values = [0]
 
-        fig_kc = Figure(figsize=(5.0, 3.0), dpi=100)
+        fig_kc = Figure(figsize=(4.5, 1.9), dpi=100)
         fig_kc.set_facecolor(mc["fig_face"])
         ax_kc = fig_kc.add_subplot(111)
         ax_kc.set_facecolor(mc["ax_face"])
         bars_kc = ax_kc.barh(kc_labels, kc_values, color=CHART_BAR2,
                              edgecolor="white", linewidth=0.5, height=0.55)
         ax_kc.invert_yaxis()
-        ax_kc.tick_params(colors=mc["tick"], labelsize=8)
-        ax_kc.set_xlabel("Jumlah", color=mc["text"], fontsize=9)
+        ax_kc.tick_params(colors=mc["tick"], labelsize=7)
+        ax_kc.set_xlabel("Jumlah", color=mc["text"], fontsize=8)
         for sp in ax_kc.spines.values():
             sp.set_visible(False)
         ax_kc.grid(axis="x", alpha=0.2, color=mc["grid"])
@@ -389,8 +403,8 @@ class DashboardKota(ctk.CTkFrame):
             w = bar.get_width()
             if w > 0:
                 ax_kc.text(w + 0.2, bar.get_y() + bar.get_height() / 2,
-                           f"{int(w)}", va="center", fontsize=8, color=mc["text"])
-        fig_kc.tight_layout(pad=1.5)
+                           f"{int(w)}", va="center", fontsize=7, color=mc["text"])
+        fig_kc.tight_layout(pad=1.0)
 
         cv_kc = FigureCanvasTkAgg(fig_kc, master=kec_area)
         cv_kc.draw()
@@ -477,6 +491,7 @@ class DashboardKota(ctk.CTkFrame):
     # ══════════════════════════════════════════════
 
     def _show_manajemen(self):
+        self._current_page = "manajemen"
         self._clear()
         c = self.content
 
