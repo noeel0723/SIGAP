@@ -47,7 +47,7 @@ class FormLaporan(ctk.CTkToplevel):
         ctk.CTkLabel(
             inner, text="📝  Buat Laporan Baru",
             font=ctk.CTkFont(size=18, weight="bold"),
-            text_color=("#6C5CE7", "#7C6CF7")
+            text_color=("#2F4156", "#87CEEB")
         ).pack(anchor="w")
         ctk.CTkLabel(
             inner, text="Isi semua informasi di bawah, lalu klik kirim",
@@ -142,8 +142,8 @@ class FormLaporan(ctk.CTkToplevel):
             btn_row, text="📤  Kirim Laporan",
             height=40, corner_radius=8, width=180,
             font=ctk.CTkFont(size=14, weight="bold"),
-            fg_color=("#6C5CE7", "#7C6CF7"),
-            hover_color=("#5A4BD1", "#6B5BE6"),
+            fg_color=("#567C8D", "#567C8D"),
+            hover_color=("#2F4156", "#2F4156"),
             command=self._submit
         )
         self.submit_btn.pack(side="left")

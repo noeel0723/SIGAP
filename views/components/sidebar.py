@@ -24,7 +24,7 @@ class Sidebar(ctk.CTkFrame):
         ctk.CTkLabel(
             logo_frame, text=APP_NAME,
             font=ctk.CTkFont(size=24, weight="bold"),
-            text_color=("#1565C0", "#42A5F5")
+            text_color=("#2F4156", "#87CEEB")
         ).pack(anchor="w")
         ctk.CTkLabel(
             logo_frame, text="Pengaduan & Aspirasi Publik",
@@ -52,7 +52,7 @@ class Sidebar(ctk.CTkFrame):
         ctk.CTkLabel(
             user_frame, text=role_text,
             font=ctk.CTkFont(size=11),
-            text_color=("#1E88E5", "#64B5F6")
+            text_color=("#567C8D", "#87CEEB")
         ).pack(anchor="w", padx=12, pady=(0, 10))
 
         # ── Menu Items ──

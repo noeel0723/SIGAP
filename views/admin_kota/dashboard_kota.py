@@ -27,8 +27,8 @@ from config.settings import STATUS_LAPORAN
 
 
 # ── Palet warna ────────────────────────────
-ACCENT       = "#6C5CE7"
-ACCENT_HOVER = "#5A4BD1"
+ACCENT       = "#567C8D"
+ACCENT_HOVER = "#2F4156"
 STATUS_COLORS = {
     "Menunggu":            "#FFA726",
     "Diproses Kelurahan":  "#42A5F5",
@@ -38,9 +38,9 @@ STATUS_COLORS = {
     "Ditolak":             "#EF5350",
 }
 PIE_COLORS  = ["#FFA726", "#42A5F5", "#AB47BC", "#FF7043", "#66BB6A", "#EF5350"]
-CHART_LINE  = "#FF9500"
-CHART_BAR1  = "#42A5F5"
-CHART_BAR2  = "#66BB6A"
+CHART_LINE  = "#567C8D"
+CHART_BAR1  = "#87CEEB"
+CHART_BAR2  = "#2F4156"
 
 
 class DashboardKota(ctk.CTkFrame):
@@ -460,7 +460,7 @@ class DashboardKota(ctk.CTkFrame):
 
                 ctk.CTkLabel(rr, text=f"#{lap['id']}", width=55,
                              font=ctk.CTkFont(size=12),
-                             text_color=(ACCENT, "#7C6CF7"),
+                             text_color=(ACCENT, "#87CEEB"),
                              anchor="w").pack(side="left", padx=(10, 0))
                 ctk.CTkLabel(rr, text=truncate_text(lap.get("judul", ""), 28),
                              width=210, font=ctk.CTkFont(size=12),
@@ -544,7 +544,7 @@ class DashboardKota(ctk.CTkFrame):
         ctk.CTkButton(
             fi, text="Reset Filter", height=32, corner_radius=8, width=105,
             font=ctk.CTkFont(size=12),
-            fg_color=(ACCENT, "#7C6CF7"), hover_color=(ACCENT_HOVER, "#6B5BE6"),
+            fg_color=(ACCENT, ACCENT), hover_color=(ACCENT_HOVER, ACCENT_HOVER),
             command=self._reset_filter
         ).pack(side="right")
 

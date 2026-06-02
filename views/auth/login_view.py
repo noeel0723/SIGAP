@@ -41,7 +41,7 @@ class LoginView(ctk.CTkFrame):
         ctk.CTkLabel(
             inner, text="SIGAP",
             font=ctk.CTkFont(size=30, weight="bold"),
-            text_color=("#1565C0", "#42A5F5")
+            text_color=("#2F4156", "#87CEEB")
         ).pack(pady=(5, 0))
 
         ctk.CTkLabel(
@@ -106,8 +106,8 @@ class LoginView(ctk.CTkFrame):
             inner, text="Masuk",
             height=42, corner_radius=8,
             font=ctk.CTkFont(size=14, weight="bold"),
-            fg_color=("#1565C0", "#1E88E5"),
-            hover_color=("#0D47A1", "#1565C0"),
+            fg_color=("#567C8D", "#567C8D"),
+            hover_color=("#2F4156", "#2F4156"),
             command=self._do_login
         )
         self.login_btn.pack(fill="x", pady=(5, 15))
@@ -127,7 +127,7 @@ class LoginView(ctk.CTkFrame):
             font=ctk.CTkFont(size=12, underline=True),
             fg_color="transparent",
             hover_color=("gray85", "gray25"),
-            text_color=("#1565C0", "#42A5F5"),
+            text_color=("#567C8D", "#87CEEB"),
             width=10, height=25,
             command=self._show_register
         ).pack(side="left", padx=4)
