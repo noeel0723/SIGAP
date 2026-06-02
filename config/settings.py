@@ -16,7 +16,7 @@ APP_VERSION = "1.0.0"
 # ──────────────────────────────────────────────
 # KONFIGURASI UI (CustomTkinter)
 # ──────────────────────────────────────────────
-APPEARANCE_MODE = "dark"        # "dark", "light", atau "system"
+APPEARANCE_MODE = "light"       # "dark", "light", atau "system"
 COLOR_THEME = "blue"            # "blue", "dark-blue", "green"
 WINDOW_WIDTH = 1280
 WINDOW_HEIGHT = 720
