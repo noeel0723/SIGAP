@@ -46,7 +46,6 @@ class DashboardWarga(ctk.CTkFrame):
         sidebar = Sidebar(self, app=app, menu_items=[
             {"icon": "🏠", "label": "Dashboard", "command": self._show_dashboard_page},
             {"icon": "📝", "label": "Buat Laporan", "command": self._show_form_page},
-            {"icon": "🔄", "label": "Refresh", "command": self._refresh},
         ])
         sidebar.grid(row=0, column=0, sticky="nsw")
 

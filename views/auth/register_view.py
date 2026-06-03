@@ -21,16 +21,16 @@ class RegisterView(ctk.CTkFrame):
         center.grid(row=0, column=0)
 
         # ── Card Form ──
-        card = ctk.CTkFrame(center, width=420, corner_radius=15,
+        card = ctk.CTkFrame(center, width=440, corner_radius=15,
                             fg_color=("white", "gray17"),
                             border_width=1,
                             border_color=("gray80", "gray30"))
         card.pack(padx=40, pady=30)
-        card.pack_propagate(False)
-        card.configure(width=420, height=620)
 
-        inner = ctk.CTkFrame(card, fg_color="transparent")
-        inner.pack(fill="both", expand=True, padx=35, pady=25)
+        inner = ctk.CTkScrollableFrame(card, fg_color="transparent",
+                                        width=370, height=580,
+                                        scrollbar_button_color=("gray78", "gray30"))
+        inner.pack(fill="both", expand=True, padx=20, pady=20)
 
         # ── Title ──
         ctk.CTkLabel(
@@ -74,7 +74,7 @@ class RegisterView(ctk.CTkFrame):
             text_color="#E53935",
             wraplength=340
         )
-        self.msg_label.pack(fill="x", pady=(0, 5))
+        self.msg_label.pack(fill="x", pady=(5, 8))
 
         # ── Tombol Daftar ──
         self.register_btn = ctk.CTkButton(
@@ -85,7 +85,21 @@ class RegisterView(ctk.CTkFrame):
             hover_color=("#2F4156", "#2F4156"),
             command=self._do_register
         )
-        self.register_btn.pack(fill="x", pady=(5, 15))
+        self.register_btn.pack(fill="x", pady=(5, 10))
+
+        # ── Tombol Kembali ke Login ──
+        self.back_btn = ctk.CTkButton(
+            inner, text="←  Kembali ke Login",
+            height=40, corner_radius=8,
+            font=ctk.CTkFont(size=13),
+            fg_color="transparent",
+            border_width=1,
+            border_color=("gray72", "gray38"),
+            text_color=("gray30", "gray80"),
+            hover_color=("gray88", "gray25"),
+            command=self._show_login
+        )
+        self.back_btn.pack(fill="x", pady=(0, 10))
 
         # ── Link Login ──
         link_frame = ctk.CTkFrame(inner, fg_color="transparent")

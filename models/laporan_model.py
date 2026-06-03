@@ -59,9 +59,6 @@ class LaporanModel:
             raise ValueError(f"Laporan ID {laporan_id} tidak ditemukan.")
         
         status_lama = laporan["status"]
-
-        if status_lama == "Selesai":
-            raise ValueError("Laporan sudah selesai dan tidak dapat diubah kembali.")
         
         # Update status di tabel laporan
         self.db.execute(

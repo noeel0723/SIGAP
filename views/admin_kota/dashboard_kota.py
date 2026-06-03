@@ -10,6 +10,7 @@ Dashboard Admin Kota dengan dua halaman:
 
 import customtkinter as ctk
 from tkinter import messagebox
+import tkinter as tk
 
 import matplotlib
 matplotlib.use("TkAgg")
@@ -431,14 +432,14 @@ class DashboardKota(ctk.CTkFrame):
         th.pack(fill="x", padx=16, pady=(10, 0))
         th.pack_propagate(False)
 
-        th_cols = [("No", 55), ("Judul", 210), ("Pelapor", 140),
-                   ("Kelurahan", 120), ("Kategori", 140), ("Status", 140),
-                   ("Tanggal", 120)]
+        th_cols = [("No", 50), ("Judul", 180), ("Pelapor", 120),
+                   ("Kelurahan", 110), ("Kategori", 110), ("Status", 130),
+                   ("Tanggal", 110)]
         for label, w in th_cols:
             ctk.CTkLabel(th, text=label, width=w,
                          font=ctk.CTkFont(size=11, weight="bold"),
                          text_color=("gray45", "gray65"), anchor="w"
-                         ).pack(side="left", padx=(10, 0))
+                         ).pack(side="left", padx=(8, 0))
 
         # Table rows (last 10)
         recent = all_data[:10]
@@ -457,33 +458,33 @@ class DashboardKota(ctk.CTkFrame):
                 rr.pack(fill="x", pady=1)
                 rr.pack_propagate(False)
 
-                ctk.CTkLabel(rr, text=f"#{lap['id']}", width=55,
+                ctk.CTkLabel(rr, text=f"#{lap['id']}", width=50,
                              font=ctk.CTkFont(size=12),
                              text_color=(ACCENT, "#87CEEB"),
-                             anchor="w").pack(side="left", padx=(10, 0))
-                ctk.CTkLabel(rr, text=truncate_text(lap.get("judul", ""), 28),
-                             width=210, font=ctk.CTkFont(size=12),
-                             anchor="w").pack(side="left", padx=(10, 0))
-                ctk.CTkLabel(rr, text=truncate_text(lap.get("nama_pelapor", ""), 18),
-                             width=140, font=ctk.CTkFont(size=12),
-                             anchor="w").pack(side="left", padx=(10, 0))
-                ctk.CTkLabel(rr, text=truncate_text(lap.get("kelurahan", ""), 16),
+                             anchor="w").pack(side="left", padx=(8, 0))
+                ctk.CTkLabel(rr, text=truncate_text(lap.get("judul", ""), 22),
+                             width=180, font=ctk.CTkFont(size=12),
+                             anchor="w").pack(side="left", padx=(8, 0))
+                ctk.CTkLabel(rr, text=truncate_text(lap.get("nama_pelapor", ""), 16),
                              width=120, font=ctk.CTkFont(size=12),
-                             anchor="w").pack(side="left", padx=(10, 0))
-                ctk.CTkLabel(rr, text=truncate_text(lap.get("kategori", ""), 18),
-                             width=140, font=ctk.CTkFont(size=12),
-                             anchor="w").pack(side="left", padx=(10, 0))
+                             anchor="w").pack(side="left", padx=(8, 0))
+                ctk.CTkLabel(rr, text=truncate_text(lap.get("kelurahan", ""), 14),
+                             width=110, font=ctk.CTkFont(size=12),
+                             anchor="w").pack(side="left", padx=(8, 0))
+                ctk.CTkLabel(rr, text=truncate_text(lap.get("kategori", ""), 14),
+                             width=110, font=ctk.CTkFont(size=12),
+                             anchor="w").pack(side="left", padx=(8, 0))
 
                 st_color = STATUS_COLORS.get(lap["status"], "#95A5A6")
-                ctk.CTkLabel(rr, text=f"● {lap['status']}", width=140,
+                ctk.CTkLabel(rr, text=f"● {lap['status']}", width=130,
                              font=ctk.CTkFont(size=11, weight="bold"),
                              text_color=st_color, anchor="w"
-                             ).pack(side="left", padx=(10, 0))
+                             ).pack(side="left", padx=(8, 0))
 
                 ctk.CTkLabel(rr, text=format_tanggal(lap.get("created_at")),
-                             width=120, font=ctk.CTkFont(size=11),
+                             width=110, font=ctk.CTkFont(size=11),
                              text_color=("gray50", "gray60"),
-                             anchor="w").pack(side="left", padx=(10, 0))
+                             anchor="w").pack(side="left", padx=(8, 0))
 
     # ══════════════════════════════════════════════
     #  PAGE 2 : MANAJEMEN LAPORAN  (Ticket-list style)
