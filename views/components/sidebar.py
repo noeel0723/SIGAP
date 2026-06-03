@@ -106,9 +106,9 @@ class Sidebar(ctk.CTkFrame):
             height=36,
             corner_radius=8,
             font=ctk.CTkFont(size=12, weight="bold"),
-            fg_color="#EF5350",
+            fg_color="#2F4156",
             text_color="white",
-            hover_color="#E53935",
+            hover_color="#1E2D3D",
             command=self._logout
         )
         logout_btn.pack(fill="x", pady=2)

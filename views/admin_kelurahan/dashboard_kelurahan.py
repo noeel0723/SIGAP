@@ -38,10 +38,6 @@ class DashboardKelurahan(ctk.CTkFrame):
 
         sidebar = Sidebar(self, app=app, menu_items=[
             {"icon": "🏠", "label": "Dashboard", "command": lambda: self._show_main()},
-            {"icon": "📋", "label": "Semua Laporan", "command": lambda: self._filter("Semua")},
-            {"icon": "⏳", "label": "Menunggu", "command": lambda: self._filter("Menunggu")},
-            {"icon": "🔄", "label": "Diproses", "command": lambda: self._filter("Diproses Kelurahan")},
-            {"icon": "✅", "label": "Selesai", "command": lambda: self._filter("Selesai")},
         ])
         sidebar.grid(row=0, column=0, sticky="nsw")
 
