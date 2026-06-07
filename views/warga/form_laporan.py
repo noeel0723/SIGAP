@@ -134,6 +134,17 @@ class FormLaporan(ctk.CTkToplevel):
         ctk.CTkFrame(inner, height=1, fg_color=("gray85", "gray28")).pack(
             fill="x", pady=(4, 14))
 
+        # ── Anonymous Option ──
+        self.anon_var = ctk.BooleanVar(value=False)
+        self.anon_check = ctk.CTkCheckBox(
+            inner, text="🔒  Sembunyikan identitas saya (Laporan Anonim)",
+            variable=self.anon_var,
+            font=ctk.CTkFont(size=12),
+            text_color=("gray40", "gray70"),
+            checkbox_width=20, checkbox_height=20, corner_radius=4,
+        )
+        self.anon_check.pack(anchor="w", pady=(0, 14))
+
         # ── Buttons ──
         btn_row = ctk.CTkFrame(inner, fg_color="transparent")
         btn_row.pack(fill="x")
@@ -182,7 +193,8 @@ class FormLaporan(ctk.CTkToplevel):
             kategori=kategori,
             deskripsi=self.deskripsi_text.get("1.0", "end-1c"),
             lokasi=self.lokasi_entry.get(),
-            kelurahan=kelurahan
+            kelurahan=kelurahan,
+            is_anonymous=self.anon_var.get()
         )
 
         if result["success"]:

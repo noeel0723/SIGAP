@@ -42,3 +42,29 @@ def validate_email(email: str) -> bool:
     import re
     pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     return bool(re.match(pattern, email))
+
+
+def klasifikasi_prioritas(judul: str, deskripsi: str) -> str:
+    """
+    Klasifikasi prioritas laporan secara otomatis berdasarkan kata kunci.
+    
+    Memeriksa judul dan deskripsi terhadap daftar kata kunci darurat/penting
+    yang didefinisikan di config/settings.py.
+    
+    Returns: 'Tinggi', 'Sedang', atau 'Rendah'
+    """
+    from config.settings import PRIORITAS_KEYWORDS
+
+    teks = f"{judul} {deskripsi}".lower()
+
+    # Periksa prioritas Tinggi terlebih dahulu (precedence)
+    for keyword in PRIORITAS_KEYWORDS.get("Tinggi", []):
+        if keyword in teks:
+            return "Tinggi"
+
+    # Kemudian periksa Sedang
+    for keyword in PRIORITAS_KEYWORDS.get("Sedang", []):
+        if keyword in teks:
+            return "Sedang"
+
+    return "Rendah"

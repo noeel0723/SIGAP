@@ -3,12 +3,14 @@
 
 """
 Controller laporan yang menangani pembuatan laporan, perubahan status,
-workflow eskalasi, dan pengambilan data sesuai scope admin.
+workflow eskalasi, dukungan (upvote), klasifikasi prioritas otomatis,
+dan pengambilan data sesuai scope admin.
 """
 
 from models.laporan_model import LaporanModel
 from config.database import DatabaseConnection
 from config.wilayah import get_kecamatan_by_kelurahan
+from utils.helpers import klasifikasi_prioritas
 
 
 class LaporanController:
@@ -22,10 +24,12 @@ class LaporanController:
     # ──────────────────────────────────────
 
     def buat_laporan(self, user_id: int, judul: str, kategori: str,
-                     deskripsi: str, lokasi: str, kelurahan: str) -> dict:
+                     deskripsi: str, lokasi: str, kelurahan: str,
+                     is_anonymous: bool = False) -> dict:
         """
         Buat laporan baru dari Warga.
         Kecamatan otomatis diisi berdasarkan kelurahan yang dipilih.
+        Prioritas otomatis diklasifikasi berdasarkan kata kunci.
         """
         # Validasi input
         if not judul or not judul.strip():
@@ -44,6 +48,9 @@ class LaporanController:
         if kecamatan is None:
             return {"success": False, "message": "Kelurahan tidak valid."}
         
+        # Klasifikasi prioritas otomatis
+        prioritas = klasifikasi_prioritas(judul.strip(), deskripsi.strip())
+        
         try:
             laporan_id = self.laporan_model.create(
                 user_id=user_id,
@@ -52,12 +59,22 @@ class LaporanController:
                 deskripsi=deskripsi.strip(),
                 lokasi=lokasi.strip(),
                 kelurahan=kelurahan,
-                kecamatan=kecamatan
+                kecamatan=kecamatan,
+                is_anonymous=is_anonymous,
+                prioritas=prioritas
             )
+            
+            prioritas_msg = ""
+            if prioritas == "Tinggi":
+                prioritas_msg = "\n⚠️ Prioritas: TINGGI — laporan ini akan diprioritaskan."
+            elif prioritas == "Sedang":
+                prioritas_msg = "\nℹ️ Prioritas: SEDANG"
+            
             return {
                 "success": True,
-                "message": f"Laporan #{laporan_id} berhasil dibuat!",
-                "laporan_id": laporan_id
+                "message": f"Laporan #{laporan_id} berhasil dibuat!{prioritas_msg}",
+                "laporan_id": laporan_id,
+                "prioritas": prioritas
             }
         except Exception as e:
             return {"success": False, "message": f"Gagal membuat laporan: {e}"}
@@ -77,6 +94,49 @@ class LaporanController:
     def get_riwayat_laporan(self, laporan_id: int) -> list[dict]:
         """Ambil timeline riwayat status sebuah laporan."""
         return self.laporan_model.get_riwayat(laporan_id)
+
+    # ──────────────────────────────────────
+    # WARGA: DUKUNGAN / UPVOTE
+    # ──────────────────────────────────────
+
+    def toggle_dukungan(self, laporan_id: int, user_id: int) -> dict:
+        """Toggle dukungan warga terhadap laporan publik."""
+        try:
+            is_supported = self.laporan_model.toggle_dukungan(laporan_id, user_id)
+            count = self.laporan_model.count_dukungan(laporan_id)
+            if is_supported:
+                return {
+                    "success": True,
+                    "supported": True,
+                    "count": count,
+                    "message": "Anda mendukung laporan ini."
+                }
+            else:
+                return {
+                    "success": True,
+                    "supported": False,
+                    "count": count,
+                    "message": "Dukungan Anda dicabut."
+                }
+        except Exception as e:
+            return {"success": False, "message": f"Gagal toggle dukungan: {e}"}
+
+    def get_dukungan_status(self, laporan_id: int, user_id: int) -> dict:
+        """Cek status dukungan user saat ini."""
+        supported = self.laporan_model.has_user_dukungan(laporan_id, user_id)
+        count = self.laporan_model.count_dukungan(laporan_id)
+        return {"supported": supported, "count": count}
+
+    # ──────────────────────────────────────
+    # WARGA: ASPIRASI SEKITAR
+    # ──────────────────────────────────────
+
+    def get_laporan_publik(self, kelurahan: str, exclude_user_id: int = None) -> list[dict]:
+        """
+        Ambil laporan publik aktif di kelurahan tertentu.
+        Diurutkan berdasarkan jumlah dukungan terbanyak.
+        """
+        return self.laporan_model.get_laporan_publik(kelurahan, exclude_user_id)
 
     # ──────────────────────────────────────
     # ADMIN: AMBIL LAPORAN SESUAI SCOPE

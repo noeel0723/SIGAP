@@ -3,14 +3,15 @@
 
 """
 Modul data access layer untuk entitas Laporan dan Riwayat Status.
-Menangani CRUD laporan, perubahan status, eskalasi, dan query berdasarkan scope.
+Menangani CRUD laporan, perubahan status, eskalasi, dukungan (upvote),
+klasifikasi prioritas, dan query berdasarkan scope.
 """
 
 from config.database import DatabaseConnection
 
 
 class LaporanModel:
-    """Data Access Object untuk tabel laporan dan riwayat_status."""
+    """Data Access Object untuk tabel laporan, riwayat_status, dan dukungan_laporan."""
 
     def __init__(self, db: DatabaseConnection):
         self.db = db
@@ -21,16 +22,19 @@ class LaporanModel:
 
     def create(self, user_id: int, judul: str, kategori: str,
                deskripsi: str, lokasi: str, kelurahan: str,
-               kecamatan: str) -> int:
+               kecamatan: str, is_anonymous: bool = False,
+               prioritas: str = "Rendah") -> int:
         """
         Buat laporan baru dari Warga. Status default: 'Menunggu'.
         Returns: ID laporan yang baru dibuat.
         """
         laporan_id = self.db.execute(
             """INSERT INTO laporan 
-               (user_id, judul, kategori, deskripsi, lokasi, kelurahan, kecamatan)
-               VALUES (%s, %s, %s, %s, %s, %s, %s)""",
-            (user_id, judul, kategori, deskripsi, lokasi, kelurahan, kecamatan)
+               (user_id, judul, kategori, deskripsi, lokasi, kelurahan, kecamatan,
+                is_anonymous, prioritas)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+            (user_id, judul, kategori, deskripsi, lokasi, kelurahan, kecamatan,
+             1 if is_anonymous else 0, prioritas)
         )
         
         # Catat di riwayat status
@@ -83,7 +87,8 @@ class LaporanModel:
     def get_by_id(self, laporan_id: int) -> dict | None:
         """Ambil detail satu laporan berdasarkan ID."""
         return self.db.fetch_one(
-            """SELECT l.*, u.nama_lengkap AS nama_pelapor, u.email AS email_pelapor
+            """SELECT l.*, u.nama_lengkap AS nama_pelapor, u.email AS email_pelapor,
+                      (SELECT COUNT(*) FROM dukungan_laporan dl WHERE dl.laporan_id = l.id) AS jumlah_dukungan
                FROM laporan l
                JOIN users u ON l.user_id = u.id
                WHERE l.id = %s""",
@@ -93,9 +98,11 @@ class LaporanModel:
     def get_by_user(self, user_id: int) -> list[dict]:
         """Ambil semua laporan milik seorang warga (untuk tracking)."""
         return self.db.fetch_all(
-            """SELECT * FROM laporan 
-               WHERE user_id = %s 
-               ORDER BY created_at DESC""",
+            """SELECT l.*,
+                      (SELECT COUNT(*) FROM dukungan_laporan dl WHERE dl.laporan_id = l.id) AS jumlah_dukungan
+               FROM laporan l
+               WHERE l.user_id = %s 
+               ORDER BY l.created_at DESC""",
             (user_id,)
         )
 
@@ -103,14 +110,18 @@ class LaporanModel:
         """Ambil laporan berdasarkan kelurahan (scope Admin Kelurahan)."""
         if status:
             return self.db.fetch_all(
-                """SELECT l.*, u.nama_lengkap AS nama_pelapor
+                """SELECT l.*,
+                          CASE WHEN l.is_anonymous = 1 THEN 'Anonim' ELSE u.nama_lengkap END AS nama_pelapor,
+                          (SELECT COUNT(*) FROM dukungan_laporan dl WHERE dl.laporan_id = l.id) AS jumlah_dukungan
                    FROM laporan l JOIN users u ON l.user_id = u.id
                    WHERE l.kelurahan = %s AND l.status = %s
                    ORDER BY l.created_at DESC""",
                 (kelurahan, status)
             )
         return self.db.fetch_all(
-            """SELECT l.*, u.nama_lengkap AS nama_pelapor
+            """SELECT l.*,
+                      CASE WHEN l.is_anonymous = 1 THEN 'Anonim' ELSE u.nama_lengkap END AS nama_pelapor,
+                      (SELECT COUNT(*) FROM dukungan_laporan dl WHERE dl.laporan_id = l.id) AS jumlah_dukungan
                FROM laporan l JOIN users u ON l.user_id = u.id
                WHERE l.kelurahan = %s
                ORDER BY l.created_at DESC""",
@@ -121,14 +132,18 @@ class LaporanModel:
         """Ambil laporan berdasarkan kecamatan (scope Admin Kecamatan)."""
         if status:
             return self.db.fetch_all(
-                """SELECT l.*, u.nama_lengkap AS nama_pelapor
+                """SELECT l.*,
+                          CASE WHEN l.is_anonymous = 1 THEN 'Anonim' ELSE u.nama_lengkap END AS nama_pelapor,
+                          (SELECT COUNT(*) FROM dukungan_laporan dl WHERE dl.laporan_id = l.id) AS jumlah_dukungan
                    FROM laporan l JOIN users u ON l.user_id = u.id
                    WHERE l.kecamatan = %s AND l.status = %s
                    ORDER BY l.created_at DESC""",
                 (kecamatan, status)
             )
         return self.db.fetch_all(
-            """SELECT l.*, u.nama_lengkap AS nama_pelapor
+            """SELECT l.*,
+                      CASE WHEN l.is_anonymous = 1 THEN 'Anonim' ELSE u.nama_lengkap END AS nama_pelapor,
+                      (SELECT COUNT(*) FROM dukungan_laporan dl WHERE dl.laporan_id = l.id) AS jumlah_dukungan
                FROM laporan l JOIN users u ON l.user_id = u.id
                WHERE l.kecamatan = %s
                ORDER BY l.created_at DESC""",
@@ -136,17 +151,22 @@ class LaporanModel:
         )
 
     def get_all(self, status: str = None) -> list[dict]:
-        """Ambil semua laporan se-kota (scope Admin Kota)."""
+        """
+        Ambil semua laporan se-kota (scope Admin Kota).
+        Admin Kota bisa melihat identitas asli pelapor, tapi ditandai jika anonim.
+        """
         if status:
             return self.db.fetch_all(
-                """SELECT l.*, u.nama_lengkap AS nama_pelapor
+                """SELECT l.*, u.nama_lengkap AS nama_pelapor,
+                          (SELECT COUNT(*) FROM dukungan_laporan dl WHERE dl.laporan_id = l.id) AS jumlah_dukungan
                    FROM laporan l JOIN users u ON l.user_id = u.id
                    WHERE l.status = %s
                    ORDER BY l.created_at DESC""",
                 (status,)
             )
         return self.db.fetch_all(
-            """SELECT l.*, u.nama_lengkap AS nama_pelapor
+            """SELECT l.*, u.nama_lengkap AS nama_pelapor,
+                      (SELECT COUNT(*) FROM dukungan_laporan dl WHERE dl.laporan_id = l.id) AS jumlah_dukungan
                FROM laporan l JOIN users u ON l.user_id = u.id
                ORDER BY l.created_at DESC"""
         )
@@ -165,6 +185,71 @@ class LaporanModel:
                ORDER BY rs.created_at ASC""",
             (laporan_id,)
         )
+
+    # ──────────────────────────────────────
+    # DUKUNGAN / UPVOTE
+    # ──────────────────────────────────────
+
+    def toggle_dukungan(self, laporan_id: int, user_id: int) -> bool:
+        """
+        Toggle dukungan: jika belum mendukung → insert, jika sudah → delete.
+        Returns: True jika sekarang mendukung, False jika dukungan dicabut.
+        """
+        existing = self.db.fetch_one(
+            "SELECT id FROM dukungan_laporan WHERE laporan_id = %s AND user_id = %s",
+            (laporan_id, user_id)
+        )
+        
+        if existing:
+            self.db.execute(
+                "DELETE FROM dukungan_laporan WHERE laporan_id = %s AND user_id = %s",
+                (laporan_id, user_id)
+            )
+            return False
+        else:
+            self.db.execute(
+                "INSERT INTO dukungan_laporan (laporan_id, user_id) VALUES (%s, %s)",
+                (laporan_id, user_id)
+            )
+            return True
+
+    def count_dukungan(self, laporan_id: int) -> int:
+        """Hitung total dukungan untuk sebuah laporan."""
+        result = self.db.fetch_one(
+            "SELECT COUNT(*) AS total FROM dukungan_laporan WHERE laporan_id = %s",
+            (laporan_id,)
+        )
+        return result["total"] if result else 0
+
+    def has_user_dukungan(self, laporan_id: int, user_id: int) -> bool:
+        """Cek apakah user sudah mendukung laporan tertentu."""
+        result = self.db.fetch_one(
+            "SELECT id FROM dukungan_laporan WHERE laporan_id = %s AND user_id = %s",
+            (laporan_id, user_id)
+        )
+        return result is not None
+
+    # ──────────────────────────────────────
+    # LAPORAN PUBLIK (ASPIRASI SEKITAR)
+    # ──────────────────────────────────────
+
+    def get_laporan_publik(self, kelurahan: str, exclude_user_id: int = None) -> list[dict]:
+        """
+        Ambil laporan publik aktif (bukan Selesai/Ditolak) di kelurahan tertentu.
+        Diurutkan berdasarkan jumlah dukungan terbanyak.
+        Nama pelapor di-anonymize jika is_anonymous = 1.
+        """
+        query = """
+            SELECT l.*,
+                   CASE WHEN l.is_anonymous = 1 THEN 'Anonim' ELSE u.nama_lengkap END AS nama_pelapor,
+                   (SELECT COUNT(*) FROM dukungan_laporan dl WHERE dl.laporan_id = l.id) AS jumlah_dukungan
+            FROM laporan l
+            JOIN users u ON l.user_id = u.id
+            WHERE l.kelurahan = %s
+              AND l.status NOT IN ('Selesai', 'Ditolak')
+            ORDER BY jumlah_dukungan DESC, l.created_at DESC
+        """
+        return self.db.fetch_all(query, (kelurahan,))
 
     # ──────────────────────────────────────
     # STATISTIK (UNTUK DASHBOARD ADMIN KOTA)

@@ -101,6 +101,11 @@ def create_tables():
                                     'Selesai', 
                                     'Ditolak'
                                 ) NOT NULL DEFAULT 'Menunggu',
+                -- Fitur: Laporan Anonim
+                is_anonymous    TINYINT(1)      NOT NULL DEFAULT 0,
+                -- Fitur: Prioritas Otomatis
+                prioritas       ENUM('Rendah', 'Sedang', 'Tinggi')
+                                NOT NULL DEFAULT 'Rendah',
                 -- Metadata
                 created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP 
@@ -111,7 +116,8 @@ def create_tables():
                 INDEX idx_kelurahan (kelurahan),
                 INDEX idx_kecamatan (kecamatan),
                 INDEX idx_kategori (kategori),
-                INDEX idx_created (created_at)
+                INDEX idx_created (created_at),
+                INDEX idx_prioritas (prioritas)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """)
         print("[SETUP] Tabel 'laporan' dibuat.")
@@ -136,6 +142,24 @@ def create_tables():
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """)
         print("[SETUP] Tabel 'riwayat_status' dibuat.")
+
+        # ──────────────────────────────────────
+        # TABEL: dukungan_laporan (upvote / support)
+        # ──────────────────────────────────────
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS dukungan_laporan (
+                id              INT AUTO_INCREMENT PRIMARY KEY,
+                laporan_id      INT             NOT NULL,
+                user_id         INT             NOT NULL,
+                created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                
+                FOREIGN KEY (laporan_id) REFERENCES laporan(id) ON DELETE CASCADE,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                UNIQUE KEY uq_dukungan (laporan_id, user_id),
+                INDEX idx_laporan (laporan_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        """)
+        print("[SETUP] Tabel 'dukungan_laporan' dibuat.")
 
         conn.commit()
         cursor.close()

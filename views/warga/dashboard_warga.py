@@ -6,7 +6,7 @@ from controllers.laporan_controller import LaporanController
 from views.components.sidebar import Sidebar
 from views.components.status_badge import StatusBadge
 from utils.helpers import format_tanggal, truncate_text
-from config.settings import KATEGORI_LAPORAN, STATUS_LAPORAN
+from config.settings import KATEGORI_LAPORAN, STATUS_LAPORAN, PRIORITAS_COLORS
 from config.wilayah import get_semua_kecamatan, get_kelurahan_by_kecamatan
 
 
@@ -46,6 +46,7 @@ class DashboardWarga(ctk.CTkFrame):
         sidebar = Sidebar(self, app=app, menu_items=[
             {"icon": "🏠", "label": "Dashboard", "command": self._show_dashboard_page},
             {"icon": "📝", "label": "Buat Laporan", "command": self._show_form_page},
+            {"icon": "🏨", "label": "Aspirasi Sekitar", "command": self._show_aspirasi_page},
         ])
         sidebar.grid(row=0, column=0, sticky="nsw")
 
@@ -534,6 +535,19 @@ class DashboardWarga(ctk.CTkFrame):
         )
         self.form_deskripsi.pack(fill="x", pady=(3, 0))
 
+        # ── Anonymous Option ──
+        ctk.CTkFrame(fi, height=1, fg_color=("gray85", "gray28")).pack(
+            fill="x", pady=(4, 14))
+
+        self.form_anon_var = ctk.BooleanVar(value=False)
+        ctk.CTkCheckBox(
+            fi, text="🔒  Sembunyikan identitas saya (Laporan Anonim)",
+            variable=self.form_anon_var,
+            font=ctk.CTkFont(size=12),
+            text_color=("gray40", "gray70"),
+            checkbox_width=20, checkbox_height=20, corner_radius=4,
+        ).pack(anchor="w", pady=(0, 14))
+
         # ── Submit Button ──
         self.submit_btn = ctk.CTkButton(
             fi, text="📤  Kirim Laporan",
@@ -629,7 +643,8 @@ class DashboardWarga(ctk.CTkFrame):
             kategori=kategori,
             deskripsi=self.form_deskripsi.get("1.0", "end-1c"),
             lokasi=self.form_lokasi.get(),
-            kelurahan=kelurahan
+            kelurahan=kelurahan,
+            is_anonymous=self.form_anon_var.get()
         )
 
         if result["success"]:
@@ -664,7 +679,18 @@ class DashboardWarga(ctk.CTkFrame):
 
         ctk.CTkLabel(header, text="Laporan",
                      font=ctk.CTkFont(size=24, weight="bold")).pack(side="left", padx=(20, 0))
-        StatusBadge(header, status=laporan["status"]).pack(side="right")
+
+        # Badges: status + prioritas
+        badges_f = ctk.CTkFrame(header, fg_color="transparent")
+        badges_f.pack(side="right")
+        StatusBadge(badges_f, status=laporan["status"]).pack(side="left", padx=(0, 6))
+        pri = laporan.get("prioritas", "Rendah")
+        pri_color = PRIORITAS_COLORS.get(pri, "#66BB6A")
+        pri_badge = ctk.CTkFrame(badges_f, fg_color=pri_color, corner_radius=6)
+        pri_badge.pack(side="left")
+        ctk.CTkLabel(pri_badge, text=f"⚡ {pri}",
+                     font=ctk.CTkFont(size=11, weight="bold"),
+                     text_color="white").pack(padx=10, pady=3)
 
         # ── Main Card ──
         main_card = ctk.CTkFrame(
@@ -866,3 +892,234 @@ class DashboardWarga(ctk.CTkFrame):
                     font=ctk.CTkFont(size=14, weight="bold"),
                     text_color=("gray60", "gray50")
                 ).pack(side="right")
+
+    # ══════════════════════════════════════════
+    # PAGE 4 : ASPIRASI SEKITAR (Upvote / Dukungan)
+    # ══════════════════════════════════════════
+
+    def _show_aspirasi_page(self):
+        """Halaman publik: lihat laporan warga lain di kelurahan & beri dukungan."""
+        self._clear_content()
+        c = self.content
+
+        # ── Header ──
+        header = ctk.CTkFrame(c, fg_color="transparent")
+        header.pack(fill="x", padx=30, pady=(25, 20))
+
+        left_hdr = ctk.CTkFrame(header, fg_color="transparent")
+        left_hdr.pack(side="left")
+        ctk.CTkLabel(
+            left_hdr, text="🏘️  Aspirasi Sekitar",
+            font=ctk.CTkFont(size=24, weight="bold")
+        ).pack(anchor="w")
+
+        # Determine user's kelurahan — try to get from user data
+        user = self.app.current_user
+        user_kel = user.get("kelurahan", "")
+        
+        if not user_kel:
+            # If no kelurahan set, show info
+            ctk.CTkLabel(
+                left_hdr,
+                text="Lihat dan dukung laporan warga lain di wilayah Anda.",
+                font=ctk.CTkFont(size=13), text_color=("gray50", "gray60")
+            ).pack(anchor="w", pady=(2, 0))
+        else:
+            ctk.CTkLabel(
+                left_hdr,
+                text=f"Laporan aktif di Kelurahan {user_kel} — dukung yang paling mendesak!",
+                font=ctk.CTkFont(size=13), text_color=("gray50", "gray60")
+            ).pack(anchor="w", pady=(2, 0))
+
+        ctk.CTkButton(
+            header, text="🔄  Refresh", height=34, corner_radius=8, width=100,
+            font=ctk.CTkFont(size=12), fg_color="transparent",
+            border_width=1, border_color=("gray72", "gray38"),
+            text_color=("gray30", "gray80"),
+            hover_color=("gray88", "gray25"),
+            command=self._show_aspirasi_page
+        ).pack(side="right")
+
+        # ── Kelurahan Selector (if user has no fixed kelurahan) ──
+        if not user_kel:
+            sel_f = ctk.CTkFrame(c, fg_color="transparent")
+            sel_f.pack(fill="x", padx=30, pady=(0, 10))
+            ctk.CTkLabel(sel_f, text="Pilih Kelurahan:",
+                         font=ctk.CTkFont(size=12, weight="bold")).pack(side="left", padx=(0, 8))
+            
+            from config.wilayah import get_semua_kelurahan
+            all_kel = get_semua_kelurahan() if hasattr(__import__('config.wilayah', fromlist=['get_semua_kelurahan']), 'get_semua_kelurahan') else []
+            
+            # Fallback: use kecamatan combo
+            kec_list = get_semua_kecamatan()
+            self._asp_kec_var = ctk.StringVar(value=kec_list[0] if kec_list else "")
+            ctk.CTkComboBox(
+                sel_f, values=kec_list, variable=self._asp_kec_var,
+                width=160, height=32, corner_radius=8,
+                font=ctk.CTkFont(size=12), state="readonly",
+                command=self._on_asp_kecamatan_changed
+            ).pack(side="left", padx=(0, 10))
+
+            kel_list = get_kelurahan_by_kecamatan(kec_list[0]) if kec_list else []
+            self._asp_kel_var = ctk.StringVar(value=kel_list[0] if kel_list else "")
+            self._asp_kel_combo = ctk.CTkComboBox(
+                sel_f, values=kel_list, variable=self._asp_kel_var,
+                width=160, height=32, corner_radius=8,
+                font=ctk.CTkFont(size=12), state="readonly",
+                command=lambda _: self._render_aspirasi_cards()
+            )
+            self._asp_kel_combo.pack(side="left", padx=(0, 10))
+
+            user_kel = self._asp_kel_var.get()
+
+        # ── Cards container ──
+        self._aspirasi_container = ctk.CTkFrame(c, fg_color="transparent")
+        self._aspirasi_container.pack(fill="x", padx=30, pady=(0, 20))
+
+        self._asp_kelurahan = user_kel
+        self._render_aspirasi_cards()
+
+    def _on_asp_kecamatan_changed(self, kec: str):
+        kel_list = get_kelurahan_by_kecamatan(kec)
+        if kel_list:
+            self._asp_kel_combo.configure(values=kel_list)
+            self._asp_kel_combo.set(kel_list[0])
+            self._asp_kel_var.set(kel_list[0])
+        self._render_aspirasi_cards()
+
+    def _render_aspirasi_cards(self):
+        """Render kartu-kartu laporan publik dengan tombol dukungan."""
+        container = self._aspirasi_container
+        for w in container.winfo_children():
+            w.destroy()
+
+        # Determine kelurahan
+        kel = getattr(self, '_asp_kel_var', None)
+        if kel:
+            kelurahan = kel.get()
+        else:
+            kelurahan = self._asp_kelurahan
+
+        if not kelurahan:
+            ctk.CTkLabel(
+                container, text="Pilih kelurahan untuk melihat aspirasi warga.",
+                font=ctk.CTkFont(size=13), text_color=("gray50", "gray60")
+            ).pack(pady=30)
+            return
+
+        user_id = self.app.current_user["id"]
+        data = self.laporan_ctrl.get_laporan_publik(kelurahan)
+
+        if not data:
+            empty_card = ctk.CTkFrame(container, corner_radius=12,
+                                       fg_color=("white", "gray17"),
+                                       border_width=1, border_color=("gray88", "gray28"))
+            empty_card.pack(fill="x", pady=5)
+            ctk.CTkLabel(
+                empty_card, text="🎉  Tidak ada laporan aktif di kelurahan ini saat ini.",
+                font=ctk.CTkFont(size=13), text_color=("gray50", "gray60")
+            ).pack(pady=30)
+            return
+
+        for lap in data:
+            card = ctk.CTkFrame(
+                container, corner_radius=12,
+                fg_color=("white", "gray17"),
+                border_width=1, border_color=("gray88", "gray28")
+            )
+            card.pack(fill="x", pady=5)
+
+            inner = ctk.CTkFrame(card, fg_color="transparent")
+            inner.pack(fill="x", padx=20, pady=16)
+
+            # Top row: title + badges
+            top = ctk.CTkFrame(inner, fg_color="transparent")
+            top.pack(fill="x")
+
+            ctk.CTkLabel(
+                top, text=truncate_text(lap.get("judul", ""), 50),
+                font=ctk.CTkFont(size=14, weight="bold"), anchor="w"
+            ).pack(side="left")
+
+            # Priority badge
+            pri = lap.get("prioritas", "Rendah")
+            pri_color = PRIORITAS_COLORS.get(pri, "#66BB6A")
+            pri_f = ctk.CTkFrame(top, fg_color=pri_color, corner_radius=5)
+            pri_f.pack(side="right", padx=(6, 0))
+            ctk.CTkLabel(pri_f, text=f"⚡{pri}",
+                         font=ctk.CTkFont(size=9, weight="bold"),
+                         text_color="white").pack(padx=6, pady=2)
+
+            # Status badge
+            st_color = STATUS_DOT_COLORS.get(lap["status"], "#95a5a6")
+            st_f = ctk.CTkFrame(top, fg_color=st_color, corner_radius=5)
+            st_f.pack(side="right")
+            ctk.CTkLabel(st_f, text=lap["status"],
+                         font=ctk.CTkFont(size=9, weight="bold"),
+                         text_color="white").pack(padx=6, pady=2)
+
+            # Description snippet
+            desc = truncate_text(lap.get("deskripsi", ""), 120)
+            ctk.CTkLabel(
+                inner, text=desc,
+                font=ctk.CTkFont(size=12), text_color=("gray45", "gray65"),
+                anchor="w", wraplength=650
+            ).pack(fill="x", pady=(6, 0))
+
+            # Bottom row: metadata + support button
+            bot = ctk.CTkFrame(inner, fg_color="transparent")
+            bot.pack(fill="x", pady=(10, 0))
+
+            meta_items = [
+                f"📁 {lap.get('kategori', '')}",
+                f"📍 {truncate_text(lap.get('lokasi', ''), 30)}",
+                f"👤 {lap.get('nama_pelapor', 'Anonim')}",
+                f"📅 {format_tanggal(lap.get('created_at'))}",
+            ]
+            for m in meta_items:
+                ctk.CTkLabel(
+                    bot, text=m, font=ctk.CTkFont(size=10),
+                    text_color=("gray50", "gray60")
+                ).pack(side="left", padx=(0, 14))
+
+            # Support / upvote button
+            dukungan_info = self.laporan_ctrl.get_dukungan_status(lap["id"], user_id)
+            is_supported = dukungan_info["supported"]
+            count = lap.get("jumlah_dukungan", dukungan_info["count"])
+
+            # Is this the user's own report?
+            is_own = (lap.get("user_id") == user_id)
+
+            btn_text = f"✅ Didukung ({count})" if is_supported else f"👍 Dukung ({count})"
+            btn_fg = (TEAL, TEAL) if is_supported else ("transparent", "transparent")
+            btn_text_clr = "white" if is_supported else (TEAL, SKY_BLUE)
+            btn_border = (TEAL, TEAL)
+
+            if is_own:
+                # Can't upvote own report
+                btn_text = f"📋 Laporan Anda ({count})"
+                support_btn = ctk.CTkButton(
+                    bot, text=btn_text, height=30, corner_radius=8,
+                    font=ctk.CTkFont(size=11),
+                    fg_color=("gray90", "gray25"),
+                    text_color=("gray50", "gray60"),
+                    state="disabled", width=150
+                )
+            else:
+                support_btn = ctk.CTkButton(
+                    bot, text=btn_text, height=30, corner_radius=8,
+                    font=ctk.CTkFont(size=11, weight="bold"),
+                    fg_color=btn_fg, text_color=btn_text_clr,
+                    border_width=1, border_color=btn_border,
+                    hover_color=(NAVY, NAVY), width=150,
+                    command=lambda lid=lap["id"]: self._do_toggle_dukungan(lid)
+                )
+
+            support_btn.pack(side="right")
+
+    def _do_toggle_dukungan(self, laporan_id: int):
+        """Toggle dukungan dan refresh kartu."""
+        user_id = self.app.current_user["id"]
+        self.laporan_ctrl.toggle_dukungan(laporan_id, user_id)
+        self._render_aspirasi_cards()
+

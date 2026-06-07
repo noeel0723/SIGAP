@@ -24,7 +24,7 @@ from views.components.data_table import DataTable
 from views.components.status_badge import StatusBadge
 from utils.helpers import format_tanggal, truncate_text
 from config.wilayah import get_semua_kecamatan
-from config.settings import STATUS_LAPORAN
+from config.settings import STATUS_LAPORAN, PRIORITAS_COLORS
 
 
 # ── Palet warna ────────────────────────────
@@ -486,6 +486,15 @@ class DashboardKota(ctk.CTkFrame):
                              text_color=("gray50", "gray60"),
                              anchor="w").pack(side="left", padx=(8, 0))
 
+                # Priority indicator
+                pri = lap.get("prioritas", "Rendah")
+                if pri != "Rendah":
+                    pri_clr = PRIORITAS_COLORS.get(pri, "#66BB6A")
+                    ctk.CTkLabel(rr, text=f"⚡{pri}",
+                                 font=ctk.CTkFont(size=9, weight="bold"),
+                                 text_color=pri_clr, anchor="w"
+                                 ).pack(side="right", padx=(0, 8))
+
     # ══════════════════════════════════════════════
     #  PAGE 2 : MANAJEMEN LAPORAN  (Ticket-list style)
     # ══════════════════════════════════════════════
@@ -798,11 +807,14 @@ class DashboardKota(ctk.CTkFrame):
             row.pack_propagate(False)
 
             # Pelapor (name + kelurahan subtitle)
+            pelapor_name = lap.get("nama_pelapor", "")
+            is_anon = lap.get("is_anonymous", 0)
+            anon_marker = " 🔒" if is_anon else ""
             pelapor_f = ctk.CTkFrame(row, fg_color="transparent", width=190)
             pelapor_f.pack(side="left", padx=(12, 0))
             pelapor_f.pack_propagate(False)
             ctk.CTkLabel(
-                pelapor_f, text=truncate_text(lap.get("nama_pelapor", ""), 22),
+                pelapor_f, text=truncate_text(pelapor_name, 20) + anon_marker,
                 font=ctk.CTkFont(size=12, weight="bold"),
                 anchor="w"
             ).pack(anchor="w", pady=(8, 0))
@@ -866,6 +878,22 @@ class DashboardKota(ctk.CTkFrame):
                 text_color=("gray50", "gray60"), anchor="w"
             ).pack(side="left", padx=(12, 0))
 
+            # Priority + Dukungan indicator
+            pri = lap.get("prioritas", "Rendah")
+            pri_clr = PRIORITAS_COLORS.get(pri, "#66BB6A")
+            pri_f = ctk.CTkFrame(row, fg_color=pri_clr, corner_radius=4)
+            pri_f.pack(side="left", padx=(6, 0))
+            ctk.CTkLabel(pri_f, text=pri, font=ctk.CTkFont(size=8, weight="bold"),
+                         text_color="white").pack(padx=4, pady=2)
+
+            duk = lap.get("jumlah_dukungan", 0)
+            if duk > 0:
+                ctk.CTkLabel(
+                    row, text=f"👍{duk}",
+                    font=ctk.CTkFont(size=10),
+                    text_color=(ACCENT, "#87CEEB")
+                ).pack(side="left", padx=(4, 0))
+
             # Three-dot menu
             ctk.CTkLabel(
                 row, text="•••", width=30,
@@ -918,7 +946,26 @@ class DashboardKota(ctk.CTkFrame):
         ctk.CTkLabel(header, text=f"Detail Laporan #{laporan['id']}",
                      font=ctk.CTkFont(size=22, weight="bold")
                      ).pack(side="left", padx=(20, 0))
-        StatusBadge(header, status=laporan["status"]).pack(side="right")
+
+        # Badges: status + prioritas
+        badges_f = ctk.CTkFrame(header, fg_color="transparent")
+        badges_f.pack(side="right")
+        StatusBadge(badges_f, status=laporan["status"]).pack(side="left", padx=(0, 6))
+        pri = laporan.get("prioritas", "Rendah")
+        pri_color = PRIORITAS_COLORS.get(pri, "#66BB6A")
+        pri_badge = ctk.CTkFrame(badges_f, fg_color=pri_color, corner_radius=6)
+        pri_badge.pack(side="left", padx=(0, 6))
+        ctk.CTkLabel(pri_badge, text=f"⚡ {pri}",
+                     font=ctk.CTkFont(size=11, weight="bold"),
+                     text_color="white").pack(padx=10, pady=3)
+        # Dukungan count
+        duk = laporan.get("jumlah_dukungan", 0)
+        if duk > 0:
+            duk_badge = ctk.CTkFrame(badges_f, fg_color=(ACCENT, ACCENT), corner_radius=6)
+            duk_badge.pack(side="left")
+            ctk.CTkLabel(duk_badge, text=f"👍 {duk} dukungan",
+                         font=ctk.CTkFont(size=11, weight="bold"),
+                         text_color="white").pack(padx=10, pady=3)
 
         # ── Info Card ──
         info_card = ctk.CTkFrame(c, corner_radius=12,
@@ -937,8 +984,14 @@ class DashboardKota(ctk.CTkFrame):
         # Left column
         left = ctk.CTkFrame(info_row, fg_color="transparent")
         left.grid(row=0, column=0, sticky="nsew", padx=(0, 20))
+
+        # Anonymous marker for admin kota
+        pelapor_name = laporan.get("nama_pelapor", "")
+        is_anon = laporan.get("is_anonymous", 0)
+        pelapor_display = f"{pelapor_name}  🔒 Anonim" if is_anon else pelapor_name
+
         for lbl, val in [("Judul", laporan.get("judul", "")),
-                          ("Pelapor", laporan.get("nama_pelapor", "")),
+                          ("Pelapor", pelapor_display),
                           ("Kategori", laporan.get("kategori", "")),
                           ("Lokasi", laporan.get("lokasi", ""))]:
             rf = ctk.CTkFrame(left, fg_color="transparent")

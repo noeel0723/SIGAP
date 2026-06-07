@@ -74,3 +74,30 @@ KATEGORI_LAPORAN = [
     "Transportasi Publik",
     "Lainnya",
 ]
+
+# ──────────────────────────────────────────────
+# PRIORITAS LAPORAN (Klasifikasi Otomatis)
+# ──────────────────────────────────────────────
+PRIORITAS_LAPORAN = ["Rendah", "Sedang", "Tinggi"]
+
+# Kata kunci untuk menentukan prioritas secara otomatis
+PRIORITAS_KEYWORDS = {
+    "Tinggi": [
+        "ambruk", "runtuh", "roboh", "kebakaran", "banjir", "longsor",
+        "korban", "kecelakaan", "putus", "jebol", "meledak", "tewas",
+        "luka", "darurat", "emergency", "berbahaya", "mengancam",
+        "mati listrik", "tumbang", "evakuasi", "tenggelam", "pohon tumbang",
+    ],
+    "Sedang": [
+        "rusak berat", "bocor", "berlubang", "macet", "banjir kecil",
+        "retak", "miring", "padam", "tidak berfungsi", "mampet",
+        "sampah menumpuk", "bau busuk", "genangan", "licin", "rusak",
+    ],
+}
+
+# Warna badge prioritas untuk UI
+PRIORITAS_COLORS = {
+    "Rendah": "#66BB6A",   # hijau
+    "Sedang": "#FFA726",   # oranye
+    "Tinggi": "#EF5350",   # merah
+}

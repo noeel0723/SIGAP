@@ -7,6 +7,7 @@ from controllers.laporan_controller import LaporanController
 from views.components.sidebar import Sidebar
 from views.components.status_badge import StatusBadge
 from utils.helpers import format_tanggal, truncate_text
+from config.settings import PRIORITAS_COLORS
 
 # ── Palette ──
 NAVY     = "#2F4156"
@@ -125,13 +126,13 @@ class DashboardKelurahan(ctk.CTkFrame):
         th.pack(fill="x")
         th.pack_propagate(False)
 
-        cols = [("#", 45), ("Judul", 180), ("Pelapor", 130),
-                ("Kategori", 130), ("Status", 140), ("Tanggal", 130)]
+        cols = [("#", 40), ("Judul", 160), ("Pelapor", 110),
+                ("Kategori", 110), ("Prioritas", 80), ("Status", 130), ("Duk.", 50), ("Tanggal", 110)]
         for lbl, w in cols:
             ctk.CTkLabel(th, text=lbl, width=w,
                          font=ctk.CTkFont(size=11, weight="bold"),
                          text_color=("gray45", "gray65"), anchor="w"
-                         ).pack(side="left", padx=(12, 0), pady=8)
+                         ).pack(side="left", padx=(10, 0), pady=8)
 
         if not data:
             ctk.CTkLabel(self._table_frame, text="Tidak ada laporan.",
@@ -146,28 +147,44 @@ class DashboardKelurahan(ctk.CTkFrame):
             rr.pack(fill="x", pady=1)
             rr.pack_propagate(False)
 
-            ctk.CTkLabel(rr, text=f"#{lap['id']}", width=45,
+            ctk.CTkLabel(rr, text=f"#{lap['id']}", width=40,
                          font=ctk.CTkFont(size=12),
                          text_color=(TEAL, SKY_BLUE), anchor="w"
-                         ).pack(side="left", padx=(12, 0))
-            ctk.CTkLabel(rr, text=truncate_text(lap.get("judul", ""), 24),
-                         width=180, font=ctk.CTkFont(size=12),
+                         ).pack(side="left", padx=(10, 0))
+            ctk.CTkLabel(rr, text=truncate_text(lap.get("judul", ""), 20),
+                         width=160, font=ctk.CTkFont(size=12),
                          anchor="w").pack(side="left", padx=(0, 0))
-            ctk.CTkLabel(rr, text=truncate_text(lap.get("nama_pelapor", ""), 18),
-                         width=130, font=ctk.CTkFont(size=12),
+            ctk.CTkLabel(rr, text=truncate_text(lap.get("nama_pelapor", ""), 14),
+                         width=110, font=ctk.CTkFont(size=12),
                          anchor="w").pack(side="left")
-            ctk.CTkLabel(rr, text=truncate_text(lap.get("kategori", ""), 16),
-                         width=130, font=ctk.CTkFont(size=12),
+            ctk.CTkLabel(rr, text=truncate_text(lap.get("kategori", ""), 14),
+                         width=110, font=ctk.CTkFont(size=12),
                          anchor="w").pack(side="left")
 
+            # Prioritas badge
+            pri = lap.get("prioritas", "Rendah")
+            pri_clr = PRIORITAS_COLORS.get(pri, "#66BB6A")
+            pri_f = ctk.CTkFrame(rr, fg_color=pri_clr, corner_radius=4, width=70)
+            pri_f.pack(side="left", padx=(4, 0))
+            ctk.CTkLabel(pri_f, text=pri, font=ctk.CTkFont(size=9, weight="bold"),
+                         text_color="white").pack(padx=4, pady=2)
+
             st_clr = STATUS_DOT_COLORS.get(lap["status"], "#95a5a6")
-            ctk.CTkLabel(rr, text=f"● {lap['status']}", width=140,
+            ctk.CTkLabel(rr, text=f"● {lap['status']}", width=130,
                          font=ctk.CTkFont(size=11), text_color=st_clr,
-                         anchor="w").pack(side="left")
+                         anchor="w").pack(side="left", padx=(4, 0))
+
+            # Dukungan count
+            duk = lap.get("jumlah_dukungan", 0)
+            ctk.CTkLabel(rr, text=f"👍 {duk}", width=50,
+                         font=ctk.CTkFont(size=11),
+                         text_color=(TEAL, SKY_BLUE), anchor="w"
+                         ).pack(side="left", padx=(4, 0))
+
             ctk.CTkLabel(rr, text=format_tanggal(lap.get("created_at")),
-                         width=130, font=ctk.CTkFont(size=11),
+                         width=110, font=ctk.CTkFont(size=11),
                          text_color=("gray50", "gray60"), anchor="w"
-                         ).pack(side="left")
+                         ).pack(side="left", padx=(4, 0))
 
             # Click → detail page
             def _bind(widget, d=lap):
@@ -211,7 +228,18 @@ class DashboardKelurahan(ctk.CTkFrame):
 
         ctk.CTkLabel(header, text="Laporan",
                      font=ctk.CTkFont(size=24, weight="bold")).pack(side="left", padx=(20, 0))
-        StatusBadge(header, status=laporan["status"]).pack(side="right")
+
+        # Badges: status + prioritas
+        badges_f = ctk.CTkFrame(header, fg_color="transparent")
+        badges_f.pack(side="right")
+        StatusBadge(badges_f, status=laporan["status"]).pack(side="left", padx=(0, 6))
+        pri = laporan.get("prioritas", "Rendah")
+        pri_color = PRIORITAS_COLORS.get(pri, "#66BB6A")
+        pri_badge = ctk.CTkFrame(badges_f, fg_color=pri_color, corner_radius=6)
+        pri_badge.pack(side="left")
+        ctk.CTkLabel(pri_badge, text=f"⚡ {pri}",
+                     font=ctk.CTkFont(size=11, weight="bold"),
+                     text_color="white").pack(padx=10, pady=3)
 
         # ── Main Card ──
         main_card = ctk.CTkFrame(
