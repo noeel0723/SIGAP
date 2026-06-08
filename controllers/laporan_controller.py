@@ -10,7 +10,6 @@ dan pengambilan data sesuai scope admin.
 from models.laporan_model import LaporanModel
 from config.database import DatabaseConnection
 from config.wilayah import get_kecamatan_by_kelurahan
-from utils.helpers import klasifikasi_prioritas
 
 
 class LaporanController:
@@ -29,7 +28,7 @@ class LaporanController:
         """
         Buat laporan baru dari Warga.
         Kecamatan otomatis diisi berdasarkan kelurahan yang dipilih.
-        Prioritas otomatis diklasifikasi berdasarkan kata kunci.
+        Prioritas default: Rendah (akan ditentukan oleh admin).
         """
         # Validasi input
         if not judul or not judul.strip():
@@ -48,9 +47,6 @@ class LaporanController:
         if kecamatan is None:
             return {"success": False, "message": "Kelurahan tidak valid."}
         
-        # Klasifikasi prioritas otomatis
-        prioritas = klasifikasi_prioritas(judul.strip(), deskripsi.strip())
-        
         try:
             laporan_id = self.laporan_model.create(
                 user_id=user_id,
@@ -61,20 +57,13 @@ class LaporanController:
                 kelurahan=kelurahan,
                 kecamatan=kecamatan,
                 is_anonymous=is_anonymous,
-                prioritas=prioritas
+                prioritas="Rendah"
             )
-            
-            prioritas_msg = ""
-            if prioritas == "Tinggi":
-                prioritas_msg = "\n⚠️ Prioritas: TINGGI — laporan ini akan diprioritaskan."
-            elif prioritas == "Sedang":
-                prioritas_msg = "\nℹ️ Prioritas: SEDANG"
             
             return {
                 "success": True,
-                "message": f"Laporan #{laporan_id} berhasil dibuat!{prioritas_msg}",
+                "message": f"Laporan #{laporan_id} berhasil dibuat!",
                 "laporan_id": laporan_id,
-                "prioritas": prioritas
             }
         except Exception as e:
             return {"success": False, "message": f"Gagal membuat laporan: {e}"}
@@ -161,15 +150,20 @@ class LaporanController:
     # ──────────────────────────────────────
 
     def proses_laporan(self, laporan_id: int, admin_id: int,
-                       status_baru: str, catatan: str) -> dict:
+                       status_baru: str, catatan: str,
+                       prioritas: str = None) -> dict:
         """
         Admin memproses laporan: ubah status & tambah catatan.
-        Digunakan untuk semua aksi: proses, eskalasi, selesai, tolak.
+        Opsional: set prioritas laporan.
         """
         if not catatan or not catatan.strip():
             return {"success": False, "message": "Catatan admin wajib diisi."}
         
         try:
+            # Update prioritas jika diberikan
+            if prioritas:
+                self.laporan_model.update_prioritas(laporan_id, prioritas)
+
             self.laporan_model.update_status(
                 laporan_id=laporan_id,
                 admin_id=admin_id,
@@ -184,6 +178,19 @@ class LaporanController:
             return {"success": False, "message": str(e)}
         except Exception as e:
             return {"success": False, "message": f"Gagal memproses laporan: {e}"}
+
+    def set_prioritas(self, laporan_id: int, prioritas: str) -> dict:
+        """Admin menentukan skala prioritas laporan."""
+        if prioritas not in ("Rendah", "Sedang", "Tinggi"):
+            return {"success": False, "message": "Prioritas tidak valid."}
+        try:
+            self.laporan_model.update_prioritas(laporan_id, prioritas)
+            return {
+                "success": True,
+                "message": f"Prioritas laporan #{laporan_id} diubah menjadi '{prioritas}'."
+            }
+        except Exception as e:
+            return {"success": False, "message": f"Gagal mengubah prioritas: {e}"}
 
     # ──────────────────────────────────────
     # ADMIN KOTA: STATISTIK

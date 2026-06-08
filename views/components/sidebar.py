@@ -1,8 +1,13 @@
 # views/components/sidebar.py
 # Komponen sidebar navigasi reusable
 
+import os
 import customtkinter as ctk
+from PIL import Image
 from config.settings import APP_NAME, ROLES
+
+# Logo path
+LOGO_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "assets", "IMG_8046.PNG")
 
 
 class Sidebar(ctk.CTkFrame):
@@ -18,9 +23,20 @@ class Sidebar(ctk.CTkFrame):
         logo_frame = ctk.CTkFrame(self, fg_color="transparent")
         logo_frame.pack(fill="x", padx=20, pady=(25, 5))
 
-        ctk.CTkLabel(
-            logo_frame, text="📋", font=ctk.CTkFont(size=32)
-        ).pack(anchor="w")
+        # Load logo image
+        if os.path.exists(LOGO_PATH):
+            logo_img = Image.open(LOGO_PATH)
+            self._logo_ctk = ctk.CTkImage(light_image=logo_img,
+                                            dark_image=logo_img,
+                                            size=(48, 48))
+            ctk.CTkLabel(
+                logo_frame, image=self._logo_ctk, text=""
+            ).pack(anchor="w")
+        else:
+            ctk.CTkLabel(
+                logo_frame, text="📋", font=ctk.CTkFont(size=32)
+            ).pack(anchor="w")
+
         ctk.CTkLabel(
             logo_frame, text=APP_NAME,
             font=ctk.CTkFont(size=24, weight="bold"),

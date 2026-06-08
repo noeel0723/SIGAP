@@ -11,10 +11,15 @@ Usage:
     python main.py
 """
 
+import os
 import customtkinter as ctk
+from PIL import Image, ImageTk
 from config.settings import APP_NAME, APP_VERSION, APPEARANCE_MODE, COLOR_THEME
 from config.database import DatabaseConnection
 from views.auth.login_view import LoginView
+
+# Logo path
+LOGO_PATH = os.path.join(os.path.dirname(__file__), "assets", "IMG_8046.PNG")
 
 
 class SIGAPApp(ctk.CTk):
@@ -28,6 +33,12 @@ class SIGAPApp(ctk.CTk):
         self.geometry("1280x720")
         self.minsize(1024, 600)
         
+        # Set window icon
+        if os.path.exists(LOGO_PATH):
+            icon_img = Image.open(LOGO_PATH)
+            self._icon_photo = ImageTk.PhotoImage(icon_img.resize((32, 32)))
+            self.iconphoto(True, self._icon_photo)
+
         # Set appearance
         ctk.set_appearance_mode(APPEARANCE_MODE)
         ctk.set_default_color_theme(COLOR_THEME)

@@ -1,8 +1,13 @@
 # views/auth/login_view.py
 # Halaman Login SIGAP
 
+import os
 import customtkinter as ctk
+from PIL import Image
 from controllers.auth_controller import AuthController
+
+# Logo path
+LOGO_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "assets", "IMG_8046.PNG")
 
 
 class LoginView(ctk.CTkFrame):
@@ -33,10 +38,19 @@ class LoginView(ctk.CTkFrame):
         inner.pack(fill="both", expand=True, padx=35, pady=30)
 
         # ── Logo & Title ──
-        ctk.CTkLabel(
-            inner, text="📋",
-            font=ctk.CTkFont(size=42)
-        ).pack(pady=(10, 0))
+        if os.path.exists(LOGO_PATH):
+            logo_img = Image.open(LOGO_PATH)
+            self._logo_ctk = ctk.CTkImage(light_image=logo_img,
+                                            dark_image=logo_img,
+                                            size=(64, 64))
+            ctk.CTkLabel(
+                inner, image=self._logo_ctk, text=""
+            ).pack(pady=(10, 0))
+        else:
+            ctk.CTkLabel(
+                inner, text="📋",
+                font=ctk.CTkFont(size=42)
+            ).pack(pady=(10, 0))
 
         ctk.CTkLabel(
             inner, text="SIGAP",

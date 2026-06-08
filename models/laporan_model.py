@@ -80,6 +80,13 @@ class LaporanModel:
         
         return laporan_id
 
+    def update_prioritas(self, laporan_id: int, prioritas: str) -> int:
+        """Update prioritas laporan (ditentukan oleh admin)."""
+        return self.db.execute(
+            "UPDATE laporan SET prioritas = %s WHERE id = %s",
+            (prioritas, laporan_id)
+        )
+
     # ──────────────────────────────────────
     # QUERY: BERDASARKAN SCOPE
     # ──────────────────────────────────────

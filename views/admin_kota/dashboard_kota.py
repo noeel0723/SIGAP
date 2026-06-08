@@ -605,19 +605,20 @@ class DashboardKota(ctk.CTkFrame):
         header_row.pack_propagate(False)
 
         headers = [
-            ("Pelapor", 190),
-            ("Ticket ID", 90),
-            ("Judul", 210),
-            ("Kategori", 120),
-            ("Status", 130),
-            ("Tanggal", 120),
+            ("Pelapor", 160),
+            ("Ticket ID", 80),
+            ("Judul", 170),
+            ("Kategori", 110),
+            ("Status", 110),
+            ("Prioritas", 75),
+            ("Tanggal", 100),
         ]
         for label, w in headers:
             ctk.CTkLabel(
                 header_row, text=label, width=w,
                 font=ctk.CTkFont(size=11, weight="bold"),
                 text_color=("gray45", "gray65"), anchor="w"
-            ).pack(side="left", padx=(12, 0))
+            ).pack(side="left", padx=(10, 0))
 
         # Scrollable rows area
         self.mgmt_list = ctk.CTkScrollableFrame(
@@ -810,16 +811,16 @@ class DashboardKota(ctk.CTkFrame):
             pelapor_name = lap.get("nama_pelapor", "")
             is_anon = lap.get("is_anonymous", 0)
             anon_marker = " 🔒" if is_anon else ""
-            pelapor_f = ctk.CTkFrame(row, fg_color="transparent", width=190)
-            pelapor_f.pack(side="left", padx=(12, 0))
+            pelapor_f = ctk.CTkFrame(row, fg_color="transparent", width=160)
+            pelapor_f.pack(side="left", padx=(10, 0))
             pelapor_f.pack_propagate(False)
             ctk.CTkLabel(
-                pelapor_f, text=truncate_text(pelapor_name, 20) + anon_marker,
+                pelapor_f, text=truncate_text(pelapor_name, 18) + anon_marker,
                 font=ctk.CTkFont(size=12, weight="bold"),
                 anchor="w"
             ).pack(anchor="w", pady=(8, 0))
             ctk.CTkLabel(
-                pelapor_f, text=truncate_text(lap.get("kelurahan", ""), 24),
+                pelapor_f, text=truncate_text(lap.get("kelurahan", ""), 22),
                 font=ctk.CTkFont(size=10),
                 text_color=("gray50", "gray60"),
                 anchor="w"
@@ -827,72 +828,65 @@ class DashboardKota(ctk.CTkFrame):
 
             # Ticket ID
             ctk.CTkLabel(
-                row, text=f"#{lap['id']:06d}", width=90,
+                row, text=f"#{lap['id']:06d}", width=80,
                 font=ctk.CTkFont(size=11),
                 text_color=(ACCENT, "#87CEEB"), anchor="w"
-            ).pack(side="left", padx=(12, 0))
+            ).pack(side="left", padx=(10, 0))
 
             # Judul (subject)
-            judul_f = ctk.CTkFrame(row, fg_color="transparent", width=210)
-            judul_f.pack(side="left", padx=(12, 0))
+            judul_f = ctk.CTkFrame(row, fg_color="transparent", width=170)
+            judul_f.pack(side="left", padx=(10, 0))
             judul_f.pack_propagate(False)
             ctk.CTkLabel(
-                judul_f, text=truncate_text(lap.get("judul", ""), 26),
+                judul_f, text=truncate_text(lap.get("judul", ""), 22),
                 font=ctk.CTkFont(size=12),
                 anchor="w"
             ).pack(anchor="w", pady=(8, 0))
             ctk.CTkLabel(
                 judul_f,
-                text=truncate_text(lap.get("deskripsi", ""), 32),
+                text=truncate_text(lap.get("deskripsi", ""), 28),
                 font=ctk.CTkFont(size=10),
                 text_color=("gray50", "gray60"),
                 anchor="w"
             ).pack(anchor="w")
 
-            # Kategori (priority-like)
-            kat_text = truncate_text(lap.get("kategori", ""), 14)
+            # Kategori badge
+            kat_text = truncate_text(lap.get("kategori", ""), 13)
             kat_frame = ctk.CTkFrame(row, fg_color=("#EEF2FF", "gray25"),
-                                      corner_radius=6, width=110)
-            kat_frame.pack(side="left", padx=(12, 0))
+                                      corner_radius=6, width=100)
+            kat_frame.pack(side="left", padx=(10, 0))
             ctk.CTkLabel(
                 kat_frame, text=kat_text,
-                font=ctk.CTkFont(size=10, weight="bold"),
+                font=ctk.CTkFont(size=9, weight="bold"),
                 text_color=(ACCENT, "#87CEEB")
-            ).pack(padx=8, pady=4)
+            ).pack(padx=6, pady=4)
 
             # Status badge
             st_color = STATUS_COLORS.get(lap["status"], "#95A5A6")
             status_frame = ctk.CTkFrame(row, fg_color=st_color,
-                                         corner_radius=6, width=110)
-            status_frame.pack(side="left", padx=(12, 0))
+                                         corner_radius=6, width=100)
+            status_frame.pack(side="left", padx=(10, 0))
             ctk.CTkLabel(
                 status_frame, text=lap["status"],
-                font=ctk.CTkFont(size=10, weight="bold"),
+                font=ctk.CTkFont(size=9, weight="bold"),
                 text_color="white"
-            ).pack(padx=8, pady=4)
+            ).pack(padx=6, pady=4)
+
+            # Prioritas badge
+            pri = lap.get("prioritas", "Rendah")
+            pri_clr = PRIORITAS_COLORS.get(pri, "#66BB6A")
+            pri_f = ctk.CTkFrame(row, fg_color=pri_clr, corner_radius=5, width=65)
+            pri_f.pack(side="left", padx=(10, 0))
+            ctk.CTkLabel(pri_f, text=pri,
+                         font=ctk.CTkFont(size=9, weight="bold"),
+                         text_color="white").pack(padx=4, pady=4)
 
             # Tanggal
             ctk.CTkLabel(
                 row, text=format_tanggal(lap.get("created_at")),
-                width=110, font=ctk.CTkFont(size=11),
+                width=100, font=ctk.CTkFont(size=10),
                 text_color=("gray50", "gray60"), anchor="w"
-            ).pack(side="left", padx=(12, 0))
-
-            # Priority + Dukungan indicator
-            pri = lap.get("prioritas", "Rendah")
-            pri_clr = PRIORITAS_COLORS.get(pri, "#66BB6A")
-            pri_f = ctk.CTkFrame(row, fg_color=pri_clr, corner_radius=4)
-            pri_f.pack(side="left", padx=(6, 0))
-            ctk.CTkLabel(pri_f, text=pri, font=ctk.CTkFont(size=8, weight="bold"),
-                         text_color="white").pack(padx=4, pady=2)
-
-            duk = lap.get("jumlah_dukungan", 0)
-            if duk > 0:
-                ctk.CTkLabel(
-                    row, text=f"👍{duk}",
-                    font=ctk.CTkFont(size=10),
-                    text_color=(ACCENT, "#87CEEB")
-                ).pack(side="left", padx=(4, 0))
+            ).pack(side="left", padx=(10, 0))
 
             # Three-dot menu
             ctk.CTkLabel(
@@ -1041,6 +1035,22 @@ class DashboardKota(ctk.CTkFrame):
                          font=ctk.CTkFont(size=14, weight="bold"),
                          text_color=(ACCENT, "#87CEEB"), anchor="w").pack(fill="x", pady=(0, 10))
 
+            # Prioritas selector
+            pri_row = ctk.CTkFrame(af, fg_color="transparent")
+            pri_row.pack(fill="x", pady=(0, 10))
+            ctk.CTkLabel(pri_row, text="Prioritas Laporan",
+                         font=ctk.CTkFont(size=12, weight="bold"), anchor="w").pack(side="left", padx=(0, 10))
+            
+            current_pri = laporan.get("prioritas", "Rendah")
+            self.prioritas_var = ctk.StringVar(value=current_pri)
+            self.prioritas_combo = ctk.CTkComboBox(
+                pri_row, values=["Rendah", "Sedang", "Tinggi"],
+                variable=self.prioritas_var,
+                width=140, height=32, corner_radius=8,
+                font=ctk.CTkFont(size=12), state="readonly"
+            )
+            self.prioritas_combo.pack(side="left")
+
             ctk.CTkLabel(af, text="Catatan Admin *",
                          font=ctk.CTkFont(size=12, weight="bold"), anchor="w").pack(fill="x")
             self.catatan_text = ctk.CTkTextbox(
@@ -1164,11 +1174,13 @@ class DashboardKota(ctk.CTkFrame):
         if not self.selected_laporan:
             return
         catatan = self.catatan_text.get("1.0", "end-1c")
+        prioritas = self.prioritas_var.get() if hasattr(self, 'prioritas_var') else None
         result = self.laporan_ctrl.proses_laporan(
             laporan_id=self.selected_laporan["id"],
             admin_id=self.app.current_user["id"],
             status_baru=status_baru,
-            catatan=catatan
+            catatan=catatan,
+            prioritas=prioritas
         )
         if result["success"]:
             messagebox.showinfo("Berhasil", result["message"])

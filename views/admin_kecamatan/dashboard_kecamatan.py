@@ -385,6 +385,22 @@ class DashboardKecamatan(ctk.CTkFrame):
                      font=ctk.CTkFont(size=14, weight="bold"),
                      text_color=(NAVY, SKY_BLUE), anchor="w").pack(fill="x", pady=(0, 10))
 
+        # Prioritas selector
+        pri_row = ctk.CTkFrame(af, fg_color="transparent")
+        pri_row.pack(fill="x", pady=(0, 10))
+        ctk.CTkLabel(pri_row, text="Prioritas Laporan",
+                     font=ctk.CTkFont(size=12, weight="bold"), anchor="w").pack(side="left", padx=(0, 10))
+        
+        current_pri = laporan.get("prioritas", "Rendah")
+        self.prioritas_var = ctk.StringVar(value=current_pri)
+        self.prioritas_combo = ctk.CTkComboBox(
+            pri_row, values=["Rendah", "Sedang", "Tinggi"],
+            variable=self.prioritas_var,
+            width=140, height=32, corner_radius=8,
+            font=ctk.CTkFont(size=12), state="readonly"
+        )
+        self.prioritas_combo.pack(side="left")
+
         ctk.CTkLabel(af, text="Catatan Admin *",
                      font=ctk.CTkFont(size=12, weight="bold"), anchor="w").pack(fill="x")
         self.catatan_text = ctk.CTkTextbox(
@@ -501,10 +517,12 @@ class DashboardKecamatan(ctk.CTkFrame):
         if not self.selected_laporan:
             return
         catatan = self.catatan_text.get("1.0", "end-1c")
+        prioritas = self.prioritas_var.get() if hasattr(self, 'prioritas_var') else None
         result = self.laporan_ctrl.proses_laporan(
             laporan_id=self.selected_laporan["id"],
             admin_id=self.app.current_user["id"],
-            status_baru=status_baru, catatan=catatan
+            status_baru=status_baru, catatan=catatan,
+            prioritas=prioritas
         )
         if result["success"]:
             messagebox.showinfo("Berhasil", result["message"])
