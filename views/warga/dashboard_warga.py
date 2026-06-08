@@ -46,7 +46,6 @@ class DashboardWarga(ctk.CTkFrame):
         sidebar = Sidebar(self, app=app, menu_items=[
             {"icon": "🏠", "label": "Dashboard", "command": self._show_dashboard_page},
             {"icon": "📝", "label": "Buat Laporan", "command": self._show_form_page},
-            {"icon": "🏨", "label": "Aspirasi Sekitar", "command": self._show_aspirasi_page},
         ])
         sidebar.grid(row=0, column=0, sticky="nsw")
 
@@ -352,40 +351,55 @@ class DashboardWarga(ctk.CTkFrame):
                 rr.pack_propagate(False)
 
                 # Judul
+                c0 = ctk.CTkFrame(rr, fg_color="transparent", width=220, height=44)
+                c0.pack(side="left", padx=(14, 0))
+                c0.pack_propagate(False)
                 ctk.CTkLabel(
-                    rr, text=truncate_text(lap.get("judul", ""), 28),
-                    width=220, font=ctk.CTkFont(size=12, weight="bold"),
+                    c0, text=truncate_text(lap.get("judul", ""), 28),
+                    font=ctk.CTkFont(size=12, weight="bold"),
                     anchor="w"
-                ).pack(side="left", padx=(14, 0), pady=8)
+                ).pack(side="left", pady=8)
 
                 # No. Laporan
+                c1 = ctk.CTkFrame(rr, fg_color="transparent", width=110, height=44)
+                c1.pack(side="left", padx=(14, 0))
+                c1.pack_propagate(False)
                 ctk.CTkLabel(
-                    rr, text=f"#LP{lap['id']:06d}",
-                    width=110, font=ctk.CTkFont(size=12),
+                    c1, text=f"#LP{lap['id']:06d}",
+                    font=ctk.CTkFont(size=12),
                     text_color=(TEAL, SKY_BLUE), anchor="w"
-                ).pack(side="left", padx=(0, 0), pady=8)
+                ).pack(side="left", pady=8)
 
                 # Status with dot
+                c2 = ctk.CTkFrame(rr, fg_color="transparent", width=150, height=44)
+                c2.pack(side="left", padx=(14, 0))
+                c2.pack_propagate(False)
                 st_color = STATUS_DOT_COLORS.get(lap["status"], "#95a5a6")
                 ctk.CTkLabel(
-                    rr, text=f"●  {lap['status']}",
-                    width=150, font=ctk.CTkFont(size=11),
+                    c2, text=f"●  {lap['status']}",
+                    font=ctk.CTkFont(size=11),
                     text_color=st_color, anchor="w"
-                ).pack(side="left", padx=(0, 0), pady=8)
+                ).pack(side="left", pady=8)
 
                 # Tanggal
+                c3 = ctk.CTkFrame(rr, fg_color="transparent", width=130, height=44)
+                c3.pack(side="left", padx=(14, 0))
+                c3.pack_propagate(False)
                 ctk.CTkLabel(
-                    rr, text=format_tanggal(lap.get("created_at")),
-                    width=130, font=ctk.CTkFont(size=11),
+                    c3, text=format_tanggal(lap.get("created_at")),
+                    font=ctk.CTkFont(size=11),
                     text_color=("gray50", "gray60"), anchor="w"
-                ).pack(side="left", padx=(0, 0), pady=8)
+                ).pack(side="left", pady=8)
 
                 # Kategori
+                c4 = ctk.CTkFrame(rr, fg_color="transparent", width=150, height=44)
+                c4.pack(side="left", padx=(14, 0))
+                c4.pack_propagate(False)
                 ctk.CTkLabel(
-                    rr, text=truncate_text(lap.get("kategori", ""), 20),
-                    width=150, font=ctk.CTkFont(size=11),
+                    c4, text=truncate_text(lap.get("kategori", ""), 20),
+                    font=ctk.CTkFont(size=11),
                     anchor="w"
-                ).pack(side="left", padx=(0, 0), pady=8)
+                ).pack(side="left", pady=8)
 
                 # Click → detail page
                 def _bind_click(widget, data=lap):
