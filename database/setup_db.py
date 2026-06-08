@@ -106,6 +106,9 @@ def create_tables():
                 -- Fitur: Prioritas Otomatis
                 prioritas       ENUM('Rendah', 'Sedang', 'Tinggi')
                                 NOT NULL DEFAULT 'Rendah',
+                -- Fitur: Lampiran Foto
+                foto_laporan    VARCHAR(255)    DEFAULT NULL,
+                foto_selesai    VARCHAR(255)    DEFAULT NULL,
                 -- Metadata
                 created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP 

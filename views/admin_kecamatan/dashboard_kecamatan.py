@@ -295,6 +295,24 @@ class DashboardKecamatan(ctk.CTkFrame):
         )
         self.prioritas_combo.pack(side="left")
 
+        # Lampiran foto opsional
+        foto_row = ctk.CTkFrame(af, fg_color="transparent")
+        foto_row.pack(fill="x", pady=(10, 10))
+        ctk.CTkLabel(foto_row, text="Foto Selesai (Opsional)",
+                     font=ctk.CTkFont(size=12, weight="bold"), anchor="w").pack(side="left", padx=(0, 10))
+        
+        self.admin_foto_path = None
+        self.lbl_admin_foto = ctk.CTkLabel(
+            foto_row, text="Tidak ada file",
+            font=ctk.CTkFont(size=11), text_color=("gray50", "gray60")
+        )
+        ctk.CTkButton(
+            foto_row, text="Pilih Foto", height=28, width=80, corner_radius=6,
+            font=ctk.CTkFont(size=11), fg_color=("gray85", "gray25"), text_color=("gray20", "gray85"),
+            command=self._pilih_foto_admin
+        ).pack(side="left", padx=(0, 10))
+        self.lbl_admin_foto.pack(side="left")
+
         ctk.CTkLabel(af, text="Catatan Admin *",
                      font=ctk.CTkFont(size=12, weight="bold"), anchor="w").pack(fill="x")
         self.catatan_text = ctk.CTkTextbox(
@@ -416,10 +434,24 @@ class DashboardKecamatan(ctk.CTkFrame):
             laporan_id=self.selected_laporan["id"],
             admin_id=self.app.current_user["id"],
             status_baru=status_baru, catatan=catatan,
-            prioritas=prioritas
+            prioritas=prioritas,
+            foto_selesai_path=self.admin_foto_path
         )
         if result["success"]:
             messagebox.showinfo("Berhasil", result["message"])
             self._show_main()
         else:
             messagebox.showerror("Gagal", result["message"])
+
+    def _pilih_foto_admin(self):
+        import tkinter.filedialog as fd
+        import os
+        filepath = fd.askopenfilename(
+            title="Pilih Lampiran Foto",
+            filetypes=[("Image Files", "*.png *.jpg *.jpeg")]
+        )
+        if filepath:
+            self.admin_foto_path = filepath
+            filename = os.path.basename(filepath)
+            from utils.helpers import truncate_text
+            self.lbl_admin_foto.configure(text=truncate_text(filename, 20), text_color=("black", "white"))

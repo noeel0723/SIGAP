@@ -24,7 +24,8 @@ class LaporanController:
 
     def buat_laporan(self, user_id: int, judul: str, kategori: str,
                      deskripsi: str, lokasi: str, kelurahan: str,
-                     is_anonymous: bool = False) -> dict:
+                     is_anonymous: bool = False,
+                     foto_laporan_path: str = None) -> dict:
         """
         Buat laporan baru dari Warga.
         Kecamatan otomatis diisi berdasarkan kelurahan yang dipilih.
@@ -47,6 +48,11 @@ class LaporanController:
         if kecamatan is None:
             return {"success": False, "message": "Kelurahan tidak valid."}
         
+        from utils.helpers import save_uploaded_image
+        saved_foto_path = None
+        if foto_laporan_path:
+            saved_foto_path = save_uploaded_image(foto_laporan_path)
+        
         try:
             laporan_id = self.laporan_model.create(
                 user_id=user_id,
@@ -57,7 +63,8 @@ class LaporanController:
                 kelurahan=kelurahan,
                 kecamatan=kecamatan,
                 is_anonymous=is_anonymous,
-                prioritas="Rendah"
+                prioritas="Rendah",
+                foto_laporan=saved_foto_path
             )
             
             return {
@@ -151,14 +158,21 @@ class LaporanController:
 
     def proses_laporan(self, laporan_id: int, admin_id: int,
                        status_baru: str, catatan: str,
-                       prioritas: str = None) -> dict:
+                       prioritas: str = None,
+                       foto_selesai_path: str = None) -> dict:
         """
         Admin memproses laporan: ubah status & tambah catatan.
         Opsional: set prioritas laporan.
+        Opsional: lampirkan foto selesai.
         """
         if not catatan or not catatan.strip():
             return {"success": False, "message": "Catatan admin wajib diisi."}
         
+        from utils.helpers import save_uploaded_image
+        saved_foto_selesai = None
+        if foto_selesai_path:
+            saved_foto_selesai = save_uploaded_image(foto_selesai_path)
+
         try:
             # Update prioritas jika diberikan
             if prioritas:
@@ -168,7 +182,8 @@ class LaporanController:
                 laporan_id=laporan_id,
                 admin_id=admin_id,
                 status_baru=status_baru,
-                catatan=catatan.strip()
+                catatan=catatan.strip(),
+                foto_selesai=saved_foto_selesai
             )
             return {
                 "success": True,

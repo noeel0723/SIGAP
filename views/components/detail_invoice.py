@@ -281,4 +281,48 @@ def build_detail_card(parent, laporan: dict, pelapor_display: str | None = None)
                  text_color=(NAVY, SKY_BLUE), anchor="e"
                  ).pack(anchor="e")
 
+    # ════════════════════════════════════
+    # LAMPIRAN FOTO
+    # ════════════════════════════════════
+    foto_laporan = laporan.get("foto_laporan")
+    foto_selesai = laporan.get("foto_selesai")
+
+    if foto_laporan or foto_selesai:
+        ctk.CTkFrame(inner, height=1, fg_color=("gray85", "gray28")).pack(fill="x", pady=(14, 14))
+        
+        foto_header = ctk.CTkFrame(inner, fg_color="transparent")
+        foto_header.pack(fill="x", pady=(0, 10))
+        ctk.CTkLabel(foto_header, text="LAMPIRAN FOTO",
+                     font=ctk.CTkFont(size=11, weight="bold"),
+                     text_color=(SECTION_CLR, "#64B5F6"), anchor="w").pack(anchor="w")
+
+        foto_row_disp = ctk.CTkFrame(inner, fg_color="transparent")
+        foto_row_disp.pack(fill="x")
+
+        import os
+        from PIL import Image
+
+        def load_img(path, title):
+            if path and os.path.exists(path):
+                f = ctk.CTkFrame(foto_row_disp, fg_color="transparent")
+                f.pack(side="left", padx=(0, 20))
+                ctk.CTkLabel(f, text=title, font=ctk.CTkFont(size=11, weight="bold")).pack(anchor="w", pady=(0, 5))
+                try:
+                    pil_img = Image.open(path)
+                    # Resize proportionally to fit in max width 250
+                    w, h = pil_img.size
+                    max_w = 250
+                    new_h = int((max_w / w) * h)
+                    ctk_img = ctk.CTkImage(light_image=pil_img, dark_image=pil_img, size=(max_w, new_h))
+                    lbl = ctk.CTkLabel(f, text="", image=ctk_img)
+                    lbl.image = ctk_img  # Keep reference
+                    lbl.pack(anchor="w")
+                except Exception as e:
+                    ctk.CTkLabel(f, text="[Gagal memuat gambar]").pack(anchor="w")
+
+        if foto_laporan:
+            load_img(foto_laporan, "Foto Laporan (Warga)")
+        if foto_selesai:
+            load_img(foto_selesai, "Foto Selesai (Admin)")
+
     return card

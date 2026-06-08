@@ -23,7 +23,7 @@ class LaporanModel:
     def create(self, user_id: int, judul: str, kategori: str,
                deskripsi: str, lokasi: str, kelurahan: str,
                kecamatan: str, is_anonymous: bool = False,
-               prioritas: str = "Rendah") -> int:
+               prioritas: str = "Rendah", foto_laporan: str = None) -> int:
         """
         Buat laporan baru dari Warga. Status default: 'Menunggu'.
         Returns: ID laporan yang baru dibuat.
@@ -31,10 +31,10 @@ class LaporanModel:
         laporan_id = self.db.execute(
             """INSERT INTO laporan 
                (user_id, judul, kategori, deskripsi, lokasi, kelurahan, kecamatan,
-                is_anonymous, prioritas)
-               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                is_anonymous, prioritas, foto_laporan)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
             (user_id, judul, kategori, deskripsi, lokasi, kelurahan, kecamatan,
-             1 if is_anonymous else 0, prioritas)
+             1 if is_anonymous else 0, prioritas, foto_laporan)
         )
         
         # Catat di riwayat status
@@ -52,7 +52,7 @@ class LaporanModel:
     # ──────────────────────────────────────
 
     def update_status(self, laporan_id: int, admin_id: int,
-                      status_baru: str, catatan: str) -> int:
+                      status_baru: str, catatan: str, foto_selesai: str = None) -> int:
         """
         Ubah status laporan dan catat riwayatnya.
         Digunakan oleh admin untuk memproses/eskalasi/menyelesaikan laporan.
@@ -64,11 +64,17 @@ class LaporanModel:
         
         status_lama = laporan["status"]
         
-        # Update status di tabel laporan
-        self.db.execute(
-            "UPDATE laporan SET status = %s WHERE id = %s",
-            (status_baru, laporan_id)
-        )
+        # Update status di tabel laporan (dan foto_selesai jika ada)
+        if foto_selesai:
+            self.db.execute(
+                "UPDATE laporan SET status = %s, foto_selesai = %s WHERE id = %s",
+                (status_baru, foto_selesai, laporan_id)
+            )
+        else:
+            self.db.execute(
+                "UPDATE laporan SET status = %s WHERE id = %s",
+                (status_baru, laporan_id)
+            )
         
         # Catat di riwayat
         self.db.execute(

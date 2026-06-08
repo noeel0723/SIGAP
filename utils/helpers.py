@@ -68,3 +68,41 @@ def klasifikasi_prioritas(judul: str, deskripsi: str) -> str:
             return "Sedang"
 
     return "Rendah"
+
+
+def save_uploaded_image(source_filepath: str) -> str | None:
+    """
+    Kopi gambar yang diupload ke folder assets/uploads/ dengan nama unik.
+    Returns relative path dari file yang tersimpan (misal: 'assets/uploads/img_12345.jpg')
+    """
+    import os
+    import shutil
+    import uuid
+    from datetime import datetime
+
+    if not source_filepath or not os.path.isfile(source_filepath):
+        return None
+
+    # Tentukan direktori upload relatif terhadap root project
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    upload_dir = os.path.join(base_dir, "assets", "uploads")
+
+    if not os.path.exists(upload_dir):
+        os.makedirs(upload_dir)
+
+    # Buat nama unik
+    ext = os.path.splitext(source_filepath)[1]
+    # Fallback to .jpg if no extension
+    if not ext:
+        ext = ".jpg"
+        
+    unique_filename = f"img_{datetime.now().strftime('%Y%m%d%H%M%S')}_{uuid.uuid4().hex[:6]}{ext}"
+    dest_path = os.path.join(upload_dir, unique_filename)
+
+    try:
+        shutil.copy2(source_filepath, dest_path)
+        # Return path relatif untuk disimpan ke DB
+        return f"assets/uploads/{unique_filename}"
+    except Exception as e:
+        print(f"[ERROR] Gagal menyimpan gambar: {e}")
+        return None

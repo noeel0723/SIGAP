@@ -549,6 +549,31 @@ class DashboardWarga(ctk.CTkFrame):
         )
         self.form_deskripsi.pack(fill="x", pady=(3, 0))
 
+        # ── Row 5: Lampiran Foto (Opsional) ──
+        row5 = ctk.CTkFrame(fi, fg_color="transparent")
+        row5.pack(fill="x", pady=(0, 12))
+        
+        ctk.CTkLabel(row5, text="Lampiran Foto (Opsional)", font=ctk.CTkFont(size=11),
+                     text_color=("gray50", "gray60")).pack(anchor="w")
+        
+        f_foto = ctk.CTkFrame(row5, fg_color="transparent")
+        f_foto.pack(fill="x", pady=(3, 0))
+        
+        self.form_foto_path = None
+        self.lbl_foto_name = ctk.CTkLabel(
+            f_foto, text="Tidak ada file yang dipilih",
+            font=ctk.CTkFont(size=12), text_color=("gray50", "gray60")
+        )
+        
+        ctk.CTkButton(
+            f_foto, text="Pilih Foto", height=30, width=100, corner_radius=6,
+            font=ctk.CTkFont(size=12, weight="bold"),
+            fg_color=("gray85", "gray25"), text_color=("gray20", "gray85"),
+            hover_color=("gray75", "gray35"),
+            command=self._pilih_foto_laporan
+        ).pack(side="left", padx=(0, 10))
+        self.lbl_foto_name.pack(side="left")
+
         # ── Anonymous Option ──
         ctk.CTkFrame(fi, height=1, fg_color=("gray85", "gray28")).pack(
             fill="x", pady=(4, 14))
@@ -631,6 +656,19 @@ class DashboardWarga(ctk.CTkFrame):
 
 
     # ── Form helpers ──
+    def _pilih_foto_laporan(self):
+        import tkinter.filedialog as fd
+        import os
+        filepath = fd.askopenfilename(
+            title="Pilih Lampiran Foto",
+            filetypes=[("Image Files", "*.png *.jpg *.jpeg")]
+        )
+        if filepath:
+            self.form_foto_path = filepath
+            filename = os.path.basename(filepath)
+            from utils.helpers import truncate_text
+            self.lbl_foto_name.configure(text=truncate_text(filename, 30), text_color=("black", "white"))
+
     def _on_kecamatan_changed(self, kec: str):
         kel_list = get_kelurahan_by_kecamatan(kec)
         if kel_list:
@@ -658,7 +696,8 @@ class DashboardWarga(ctk.CTkFrame):
             deskripsi=self.form_deskripsi.get("1.0", "end-1c"),
             lokasi=self.form_lokasi.get(),
             kelurahan=kelurahan,
-            is_anonymous=self.form_anon_var.get()
+            is_anonymous=self.form_anon_var.get(),
+            foto_laporan_path=self.form_foto_path
         )
 
         if result["success"]:
