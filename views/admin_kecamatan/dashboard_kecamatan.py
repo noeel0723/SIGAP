@@ -136,7 +136,7 @@ class DashboardKecamatan(ctk.CTkFrame):
             self._table_frame.destroy()
 
         self._table_frame = ctk.CTkFrame(self.content, fg_color="transparent")
-        self._table_frame.pack(fill="x", padx=30, pady=(0, 15))
+        self._table_frame.pack(fill="both", expand=True, padx=30, pady=(0, 15))
 
         th = ctk.CTkFrame(self._table_frame, fg_color=("gray94", "gray20"),
                           corner_radius=6, height=36)
@@ -151,60 +151,76 @@ class DashboardKecamatan(ctk.CTkFrame):
                          text_color=("gray45", "gray65"), anchor="w"
                          ).pack(side="left", padx=(8, 0), pady=8)
 
+        # Scrollable rows area
+        self._table_scroll = ctk.CTkScrollableFrame(
+            self._table_frame, fg_color="transparent", height=400,
+            scrollbar_button_color=("gray78", "gray30")
+        )
+        self._table_scroll.pack(fill="both", expand=True, pady=(4, 0))
+
         if not data:
-            ctk.CTkLabel(self._table_frame, text="Tidak ada laporan.",
+            ctk.CTkLabel(self._table_scroll, text="Tidak ada laporan.",
                          font=ctk.CTkFont(size=12),
                          text_color=("gray50", "gray60")).pack(pady=20)
             return
 
         for idx, lap in enumerate(data):
             row_bg = ("white", "gray17") if idx % 2 == 0 else ("gray98", "gray15")
-            rr = ctk.CTkFrame(self._table_frame, fg_color=row_bg,
+            rr = ctk.CTkFrame(self._table_scroll, fg_color=row_bg,
                               height=40, corner_radius=4)
             rr.pack(fill="x", pady=1)
             rr.pack_propagate(False)
 
-            ctk.CTkLabel(rr, text=f"#{lap['id']}", width=40,
-                         font=ctk.CTkFont(size=12),
-                         text_color=(TEAL, SKY_BLUE), anchor="w"
-                         ).pack(side="left", padx=(8, 0))
-            ctk.CTkLabel(rr, text=truncate_text(lap.get("judul", ""), 18),
-                         width=145, font=ctk.CTkFont(size=12),
-                         anchor="w").pack(side="left")
-            ctk.CTkLabel(rr, text=truncate_text(lap.get("nama_pelapor", ""), 12),
-                         width=100, font=ctk.CTkFont(size=12),
-                         anchor="w").pack(side="left")
-            ctk.CTkLabel(rr, text=truncate_text(lap.get("kelurahan", ""), 12),
-                         width=100, font=ctk.CTkFont(size=12),
-                         anchor="w").pack(side="left")
-            ctk.CTkLabel(rr, text=truncate_text(lap.get("kategori", ""), 12),
-                         width=100, font=ctk.CTkFont(size=12),
-                         anchor="w").pack(side="left")
+            c0 = ctk.CTkFrame(rr, fg_color="transparent", width=40, height=40)
+            c0.pack(side="left", padx=(8, 0))
+            c0.pack_propagate(False)
+            ctk.CTkLabel(c0, text=f"#{lap['id']}", font=ctk.CTkFont(size=12), text_color=(TEAL, SKY_BLUE), anchor="w").pack(side="left")
 
-            # Prioritas badge
+            c1 = ctk.CTkFrame(rr, fg_color="transparent", width=145, height=40)
+            c1.pack(side="left", padx=(8, 0))
+            c1.pack_propagate(False)
+            ctk.CTkLabel(c1, text=truncate_text(lap.get("judul", ""), 18), font=ctk.CTkFont(size=12), anchor="w").pack(side="left")
+
+            c2 = ctk.CTkFrame(rr, fg_color="transparent", width=100, height=40)
+            c2.pack(side="left", padx=(8, 0))
+            c2.pack_propagate(False)
+            ctk.CTkLabel(c2, text=truncate_text(lap.get("nama_pelapor", ""), 12), font=ctk.CTkFont(size=12), anchor="w").pack(side="left")
+
+            c3 = ctk.CTkFrame(rr, fg_color="transparent", width=100, height=40)
+            c3.pack(side="left", padx=(8, 0))
+            c3.pack_propagate(False)
+            ctk.CTkLabel(c3, text=truncate_text(lap.get("kelurahan", ""), 12), font=ctk.CTkFont(size=12), anchor="w").pack(side="left")
+
+            c4 = ctk.CTkFrame(rr, fg_color="transparent", width=100, height=40)
+            c4.pack(side="left", padx=(8, 0))
+            c4.pack_propagate(False)
+            ctk.CTkLabel(c4, text=truncate_text(lap.get("kategori", ""), 12), font=ctk.CTkFont(size=12), anchor="w").pack(side="left")
+
+            c5 = ctk.CTkFrame(rr, fg_color="transparent", width=75, height=40)
+            c5.pack(side="left", padx=(8, 0))
+            c5.pack_propagate(False)
             pri = lap.get("prioritas", "Rendah")
             pri_clr = PRIORITAS_COLORS.get(pri, "#66BB6A")
-            pri_f = ctk.CTkFrame(rr, fg_color=pri_clr, corner_radius=4, width=65)
-            pri_f.pack(side="left", padx=(4, 0))
-            ctk.CTkLabel(pri_f, text=pri, font=ctk.CTkFont(size=9, weight="bold"),
-                         text_color="white").pack(padx=4, pady=2)
+            pri_f = ctk.CTkFrame(c5, fg_color=pri_clr, corner_radius=4)
+            pri_f.pack(side="left")
+            ctk.CTkLabel(pri_f, text=pri, font=ctk.CTkFont(size=9, weight="bold"), text_color="white").pack(padx=4, pady=2)
 
+            c6 = ctk.CTkFrame(rr, fg_color="transparent", width=120, height=40)
+            c6.pack(side="left", padx=(8, 0))
+            c6.pack_propagate(False)
             st_clr = STATUS_DOT_COLORS.get(lap["status"], "#95a5a6")
-            ctk.CTkLabel(rr, text=f"● {lap['status']}", width=120,
-                         font=ctk.CTkFont(size=11), text_color=st_clr,
-                         anchor="w").pack(side="left", padx=(4, 0))
+            ctk.CTkLabel(c6, text=f"● {lap['status']}", font=ctk.CTkFont(size=11), text_color=st_clr, anchor="w").pack(side="left")
 
-            # Dukungan count
+            c7 = ctk.CTkFrame(rr, fg_color="transparent", width=45, height=40)
+            c7.pack(side="left", padx=(8, 0))
+            c7.pack_propagate(False)
             duk = lap.get("jumlah_dukungan", 0)
-            ctk.CTkLabel(rr, text=f"👍{duk}", width=45,
-                         font=ctk.CTkFont(size=11),
-                         text_color=(TEAL, SKY_BLUE), anchor="w"
-                         ).pack(side="left", padx=(4, 0))
+            ctk.CTkLabel(c7, text=f"👍 {duk}", font=ctk.CTkFont(size=11), text_color=(TEAL, SKY_BLUE), anchor="w").pack(side="left")
 
-            ctk.CTkLabel(rr, text=format_tanggal(lap.get("created_at")),
-                         width=100, font=ctk.CTkFont(size=11),
-                         text_color=("gray50", "gray60"), anchor="w"
-                         ).pack(side="left", padx=(4, 0))
+            c8 = ctk.CTkFrame(rr, fg_color="transparent", width=100, height=40)
+            c8.pack(side="left", padx=(8, 0))
+            c8.pack_propagate(False)
+            ctk.CTkLabel(c8, text=format_tanggal(lap.get("created_at")), font=ctk.CTkFont(size=11), text_color=("gray50", "gray60"), anchor="w").pack(side="left")
 
             def _bind(widget, d=lap):
                 widget.bind("<Button-1>", lambda e: self._show_detail_page(d))
