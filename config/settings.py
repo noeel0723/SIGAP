@@ -35,6 +35,7 @@ DB_CONFIG = {
     "charset": "utf8mb4",
     "collation": "utf8mb4_unicode_ci",
     "autocommit": True,
+    "use_pure": True,            # Gunakan pure Python (wajib untuk .exe)
 }
 
 # ──────────────────────────────────────────────
