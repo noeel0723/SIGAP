@@ -22,7 +22,7 @@ dist/SIGAP_Warga/_internal/
 *.spec.bak
 
 # Setup
-packaging/
+packaging/*
 
 # OS
 .DS_Store
