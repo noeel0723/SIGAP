@@ -17,7 +17,8 @@ env/
 
 # PyInstaller
 build/
-dist/
+dist/SIGAP_Admin/_internal/
+dist/SIGAP_Warga/_internal/
 *.spec.bak
 
 # Setup
