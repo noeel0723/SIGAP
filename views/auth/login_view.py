@@ -7,7 +7,7 @@ from PIL import Image
 from controllers.auth_controller import AuthController
 
 # Logo path
-LOGO_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "assets", "IMG_8046.PNG")
+LOGO_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "assets", "sigap_icon.PNG")
 
 
 class LoginView(ctk.CTkFrame):

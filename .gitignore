@@ -20,8 +20,8 @@ build/
 dist/
 *.spec.bak
 
-# Inno Setup output
-packaging/output/
+# Setup
+packaging/
 
 # OS
 .DS_Store
