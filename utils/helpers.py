@@ -83,8 +83,14 @@ def save_uploaded_image(source_filepath: str) -> str | None:
     if not source_filepath or not os.path.isfile(source_filepath):
         return None
 
-    # Tentukan direktori upload relatif terhadap root project
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    import sys
+    if getattr(sys, 'frozen', False):
+        # Jika dijalankan dari file .exe (PyInstaller) yang lokasinya berbeda (dist/SIGAP_Admin vs dist/SIGAP_Warga)
+        # Gunakan folder bersama di user directory agar Admin dan Warga membaca file fisik yang sama
+        base_dir = os.path.join(os.path.expanduser("~"), "SIGAP_Data")
+    else:
+        # Tentukan direktori upload relatif terhadap root project
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     upload_dir = os.path.join(base_dir, "assets", "uploads")
 
     if not os.path.exists(upload_dir):

@@ -303,22 +303,32 @@ def build_detail_card(parent, laporan: dict, pelapor_display: str | None = None)
         from PIL import Image
 
         def load_img(path, title):
-            if path and os.path.exists(path):
-                f = ctk.CTkFrame(foto_row_disp, fg_color="transparent")
-                f.pack(side="left", padx=(0, 20))
-                ctk.CTkLabel(f, text=title, font=ctk.CTkFont(size=11, weight="bold")).pack(anchor="w", pady=(0, 5))
-                try:
-                    pil_img = Image.open(path)
-                    # Resize proportionally to fit in max width 250
-                    w, h = pil_img.size
-                    max_w = 250
-                    new_h = int((max_w / w) * h)
-                    ctk_img = ctk.CTkImage(light_image=pil_img, dark_image=pil_img, size=(max_w, new_h))
-                    lbl = ctk.CTkLabel(f, text="", image=ctk_img)
-                    lbl.image = ctk_img  # Keep reference
-                    lbl.pack(anchor="w")
-                except Exception as e:
-                    ctk.CTkLabel(f, text="[Gagal memuat gambar]").pack(anchor="w")
+            if path:
+                import sys
+                import os
+                if getattr(sys, 'frozen', False):
+                    base_dir = os.path.join(os.path.expanduser("~"), "SIGAP_Data")
+                else:
+                    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                
+                abs_path = os.path.join(base_dir, path) if not os.path.isabs(path) else path
+                
+                if os.path.exists(abs_path):
+                    f = ctk.CTkFrame(foto_row_disp, fg_color="transparent")
+                    f.pack(side="left", padx=(0, 20))
+                    ctk.CTkLabel(f, text=title, font=ctk.CTkFont(size=11, weight="bold")).pack(anchor="w", pady=(0, 5))
+                    try:
+                        pil_img = Image.open(abs_path)
+                        # Resize proportionally to fit in max width 250
+                        w, h = pil_img.size
+                        max_w = 250
+                        new_h = int((max_w / w) * h)
+                        ctk_img = ctk.CTkImage(light_image=pil_img, dark_image=pil_img, size=(max_w, new_h))
+                        lbl = ctk.CTkLabel(f, text="", image=ctk_img)
+                        lbl.image = ctk_img  # Keep reference
+                        lbl.pack(anchor="w")
+                    except Exception as e:
+                        ctk.CTkLabel(f, text="[Gagal memuat gambar]").pack(anchor="w")
 
         if foto_laporan:
             load_img(foto_laporan, "Foto Laporan (Warga)")
