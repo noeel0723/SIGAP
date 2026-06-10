@@ -9,7 +9,7 @@ Dashboard Admin Kota dengan dua halaman:
 """
 
 import customtkinter as ctk
-from tkinter import messagebox
+from views.components.confirmation_dialog import ConfirmationDialog, ResultDialog
 import tkinter as tk
 
 import matplotlib
@@ -601,6 +601,40 @@ class DashboardKota(ctk.CTkFrame):
         self.mgmt_status.pack(side="left", padx=(0, 16))
         self.mgmt_status.set("Semua")
 
+        ctk.CTkLabel(fi, text="Dari", font=ctk.CTkFont(size=11, weight="bold"),
+                     text_color=("gray50", "gray60")).pack(side="left", padx=(16, 4))
+        self.mgmt_date_from = ctk.StringVar(value="")
+        self.mgmt_date_from_entry = ctk.CTkEntry(
+            fi, textvariable=self.mgmt_date_from,
+            width=110, height=32, corner_radius=8,
+            placeholder_text="YYYY-MM-DD", font=ctk.CTkFont(size=11),
+            state="readonly"
+        )
+        self.mgmt_date_from_entry.pack(side="left", padx=(0, 2))
+        ctk.CTkButton(
+            fi, text="📅", width=32, height=32, corner_radius=8,
+            font=ctk.CTkFont(size=14), fg_color=("gray85", "gray25"),
+            hover_color=("gray75", "gray35"), text_color=("gray30", "gray80"),
+            command=lambda: self._show_date_picker(self.mgmt_date_from)
+        ).pack(side="left", padx=(0, 8))
+
+        ctk.CTkLabel(fi, text="Sampai", font=ctk.CTkFont(size=11, weight="bold"),
+                     text_color=("gray50", "gray60")).pack(side="left", padx=(0, 4))
+        self.mgmt_date_to = ctk.StringVar(value="")
+        self.mgmt_date_to_entry = ctk.CTkEntry(
+            fi, textvariable=self.mgmt_date_to,
+            width=110, height=32, corner_radius=8,
+            placeholder_text="YYYY-MM-DD", font=ctk.CTkFont(size=11),
+            state="readonly"
+        )
+        self.mgmt_date_to_entry.pack(side="left", padx=(0, 2))
+        ctk.CTkButton(
+            fi, text="📅", width=32, height=32, corner_radius=8,
+            font=ctk.CTkFont(size=14), fg_color=("gray85", "gray25"),
+            hover_color=("gray75", "gray35"), text_color=("gray30", "gray80"),
+            command=lambda: self._show_date_picker(self.mgmt_date_to)
+        ).pack(side="left", padx=(0, 8))
+
         ctk.CTkButton(
             fi, text="Reset", height=32, corner_radius=8, width=80,
             font=ctk.CTkFont(size=12),
@@ -679,6 +713,14 @@ class DashboardKota(ctk.CTkFrame):
                 return q in hay
             data = [d for d in data if _match(d)]
 
+        # Date filter
+        date_from = self.mgmt_date_from.get().strip() if hasattr(self, 'mgmt_date_from') else ""
+        date_to = self.mgmt_date_to.get().strip() if hasattr(self, 'mgmt_date_to') else ""
+        if date_from:
+            data = [d for d in data if str(d.get("created_at", ""))[:10] >= date_from]
+        if date_to:
+            data = [d for d in data if str(d.get("created_at", ""))[:10] <= date_to]
+
         self._mgmt_all_data = data
         self._mgmt_page = 1
         self._render_mgmt_page()
@@ -688,7 +730,57 @@ class DashboardKota(ctk.CTkFrame):
         self.mgmt_kec.set("Semua")
         self.mgmt_status.set("Semua")
         self.mgmt_search_var.set("")
+        if hasattr(self, 'mgmt_date_from'):
+            self.mgmt_date_from.set("")
+        if hasattr(self, 'mgmt_date_to'):
+            self.mgmt_date_to.set("")
         self._apply_filter()
+
+    def _show_date_picker(self, target_var):
+        """Show a date picker popup using tkcalendar."""
+        try:
+            from tkcalendar import Calendar
+        except ImportError:
+            return
+        
+        picker = ctk.CTkToplevel(self)
+        picker.title("Pilih Tanggal")
+        picker.geometry("300x300")
+        picker.resizable(False, False)
+        picker.configure(fg_color=("white", "gray17"))
+        
+        picker.update_idletasks()
+        x = (picker.winfo_screenwidth() // 2) - 150
+        y = (picker.winfo_screenheight() // 2) - 150
+        picker.geometry(f"+{x}+{y}")
+        
+        picker.transient(self.winfo_toplevel())
+        picker.grab_set()
+        
+        import datetime
+        today = datetime.date.today()
+        
+        cal = Calendar(
+            picker, selectmode='day',
+            year=today.year, month=today.month, day=today.day,
+            date_pattern='yyyy-mm-dd'
+        )
+        cal.pack(fill="both", expand=True, padx=10, pady=(10, 5))
+        
+        def pick():
+            target_var.set(cal.get_date())
+            picker.grab_release()
+            picker.destroy()
+            self._apply_filter()
+        
+        ctk.CTkButton(
+            picker, text="Pilih", height=34, corner_radius=8,
+            font=ctk.CTkFont(size=12, weight="bold"),
+            fg_color=(ACCENT, ACCENT), hover_color=(ACCENT_HOVER, ACCENT_HOVER),
+            command=pick
+        ).pack(fill="x", padx=10, pady=(0, 10))
+        
+        picker.protocol("WM_DELETE_WINDOW", lambda: (picker.grab_release(), picker.destroy()))
 
     # ── Pagination helpers ──
 
@@ -1095,21 +1187,53 @@ class DashboardKota(ctk.CTkFrame):
     def _do_proses(self, status_baru: str):
         if not self.selected_laporan:
             return
-        catatan = self.catatan_text.get("1.0", "end-1c")
-        prioritas = self.prioritas_var.get() if hasattr(self, 'prioritas_var') else None
-        result = self.laporan_ctrl.proses_laporan(
-            laporan_id=self.selected_laporan["id"],
-            admin_id=self.app.current_user["id"],
-            status_baru=status_baru,
-            catatan=catatan,
-            prioritas=prioritas,
-            foto_selesai_path=self.admin_foto_path
+        
+        action_labels = {
+            'Diproses Kota': 'memproses laporan ini di tingkat Kota',
+            'Selesai': 'menandai laporan ini sebagai SELESAI',
+            'Ditolak': 'MENOLAK laporan ini',
+        }
+        action_icons = {
+            'Diproses Kota': '🔄',
+            'Selesai': '✅',
+            'Ditolak': '❌',
+        }
+        action_colors = {
+            'Diproses Kota': '#1E88E5',
+            'Selesai': '#43A047',
+            'Ditolak': '#E53935',
+        }
+        
+        label = action_labels.get(status_baru, status_baru)
+        icon = action_icons.get(status_baru, '⚡')
+        color = action_colors.get(status_baru, '#1E88E5')
+        
+        def do_action():
+            catatan = self.catatan_text.get("1.0", "end-1c")
+            prioritas = self.prioritas_var.get() if hasattr(self, 'prioritas_var') else None
+            result = self.laporan_ctrl.proses_laporan(
+                laporan_id=self.selected_laporan["id"],
+                admin_id=self.app.current_user["id"],
+                status_baru=status_baru,
+                catatan=catatan,
+                prioritas=prioritas,
+                foto_selesai_path=self.admin_foto_path
+            )
+            if result["success"]:
+                ResultDialog(self, success=True, message=result["message"],
+                             on_close=self._show_manajemen)
+            else:
+                ResultDialog(self, success=False, message=result["message"])
+        
+        ConfirmationDialog(
+            self,
+            title="Konfirmasi Tindakan",
+            message=f"Apakah Anda yakin ingin {label}?",
+            icon_text=icon,
+            confirm_text="Ya, Lanjutkan",
+            confirm_color=color,
+            on_confirm=do_action
         )
-        if result["success"]:
-            messagebox.showinfo("Berhasil", result["message"])
-            self._show_manajemen()
-        else:
-            messagebox.showerror("Gagal", result["message"])
 
     def _pilih_foto_admin(self):
         import tkinter.filedialog as fd
