@@ -149,8 +149,12 @@ class LaporanController:
         return self.laporan_model.get_by_kecamatan(kecamatan, status)
 
     def get_laporan_kota(self, status: str = None) -> list[dict]:
-        """Ambil semua laporan se-kota (untuk Admin Kota)."""
+        """Ambil laporan se-kota dengan filter status (untuk manajemen Admin Kota)."""
         return self.laporan_model.get_all(status)
+
+    def get_laporan_kota_semua(self) -> list[dict]:
+        """Ambil SEMUA laporan se-kota tanpa filter (untuk analitik/statistik Admin Kota)."""
+        return self.laporan_model.get_all(None)
 
     # ──────────────────────────────────────
     # ADMIN: PROSES / ESKALASI LAPORAN

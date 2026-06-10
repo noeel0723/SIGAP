@@ -159,7 +159,8 @@ class DashboardKota(ctk.CTkFrame):
                      anchor="w").pack(fill="x", padx=30, pady=(18, 8))
 
         # ── Stat Cards ──
-        all_data = self.laporan_ctrl.get_laporan_kota()
+        # Statistik menggunakan SEMUA laporan (tidak terfilter level)
+        all_data = self.laporan_ctrl.get_laporan_kota_semua()
         total    = len(all_data)
         menunggu = sum(1 for d in all_data if d["status"] == "Menunggu")
         proses   = sum(1 for d in all_data if "Diproses" in d.get("status", ""))
@@ -599,7 +600,7 @@ class DashboardKota(ctk.CTkFrame):
             command=lambda _: self._apply_filter(), state="readonly"
         )
         self.mgmt_status.pack(side="left", padx=(0, 16))
-        self.mgmt_status.set("Semua")
+        self.mgmt_status.set("Diproses Kota")
 
         ctk.CTkLabel(fi, text="Dari", font=ctk.CTkFont(size=11, weight="bold"),
                      text_color=("gray50", "gray60")).pack(side="left", padx=(16, 4))
@@ -1077,9 +1078,8 @@ class DashboardKota(ctk.CTkFrame):
             btn_f.pack(fill="x")
 
             actions = [
-                ("✅ Proses Kota", "Diproses Kota", "#1E88E5"),
-                ("🏁 Selesai",     "Selesai",       "#43A047"),
-                ("❌ Tolak",       "Ditolak",       "#E53935"),
+                ("🏁 Selesai", "Selesai", "#43A047"),
+                ("❌ Tolak",   "Ditolak", "#E53935"),
             ]
             for text, status, color in actions:
                 ctk.CTkButton(

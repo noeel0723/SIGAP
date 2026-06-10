@@ -63,7 +63,8 @@ class DashboardKecamatan(ctk.CTkFrame):
     def _show_main(self):
         self._clear()
         c = self.content
-        data = self.laporan_ctrl.get_laporan_kecamatan(self.kecamatan)
+        # Default: hanya tampilkan laporan yang masuk ke Kecamatan (status Diproses Kecamatan)
+        data = self.laporan_ctrl.get_laporan_kecamatan(self.kecamatan, "Diproses Kecamatan")
 
         # Header
         ctk.CTkLabel(
@@ -117,10 +118,9 @@ class DashboardKecamatan(ctk.CTkFrame):
 
         ctk.CTkLabel(filter_bar, text="Status:",
                      font=ctk.CTkFont(size=12, weight="bold")).pack(side="left", padx=(0, 5))
-        self.status_filter_var = ctk.StringVar(value="Semua")
+        self.status_filter_var = ctk.StringVar(value="Diproses Kecamatan")
         ctk.CTkComboBox(
-            filter_bar, values=["Semua", "Menunggu", "Diproses Kelurahan",
-                                "Diproses Kecamatan", "Selesai", "Ditolak"],
+            filter_bar, values=["Semua", "Diproses Kecamatan", "Diproses Kota", "Selesai", "Ditolak"],
             variable=self.status_filter_var,
             width=180, height=32, corner_radius=8,
             font=ctk.CTkFont(size=12),
@@ -289,6 +289,7 @@ class DashboardKecamatan(ctk.CTkFrame):
         if st and st != "Semua":
             data = self.laporan_ctrl.get_laporan_kecamatan(self.kecamatan, st)
         else:
+            # "Semua" = ambil seluruh laporan se-kecamatan
             data = self.laporan_ctrl.get_laporan_kecamatan(self.kecamatan)
 
         if kel and kel != "Semua":
@@ -393,60 +394,87 @@ class DashboardKecamatan(ctk.CTkFrame):
                      font=ctk.CTkFont(size=14, weight="bold"),
                      text_color=(NAVY, SKY_BLUE), anchor="w").pack(fill="x", pady=(0, 10))
 
-        # Prioritas selector
-        pri_row = ctk.CTkFrame(af, fg_color="transparent")
-        pri_row.pack(fill="x", pady=(0, 10))
-        ctk.CTkLabel(pri_row, text="Prioritas Laporan",
-                     font=ctk.CTkFont(size=12, weight="bold"), anchor="w").pack(side="left", padx=(0, 10))
-        
-        current_pri = laporan.get("prioritas", "Rendah")
-        self.prioritas_var = ctk.StringVar(value=current_pri)
-        self.prioritas_combo = ctk.CTkComboBox(
-            pri_row, values=["Rendah", "Sedang", "Tinggi"],
-            variable=self.prioritas_var,
-            width=140, height=32, corner_radius=8,
-            font=ctk.CTkFont(size=12), state="readonly"
-        )
-        self.prioritas_combo.pack(side="left")
+        # Tentukan apakah laporan masih bisa diaksi oleh Kecamatan
+        ACTIONABLE_STATUSES = {"Diproses Kecamatan"}
+        status_saat_ini = laporan.get("status", "")
+        is_actionable = status_saat_ini in ACTIONABLE_STATUSES
 
-        # Lampiran foto opsional
-        foto_row = ctk.CTkFrame(af, fg_color="transparent")
-        foto_row.pack(fill="x", pady=(10, 10))
-        ctk.CTkLabel(foto_row, text="Foto Selesai (Opsional)",
-                     font=ctk.CTkFont(size=12, weight="bold"), anchor="w").pack(side="left", padx=(0, 10))
-        
-        self.admin_foto_path = None
-        self.lbl_admin_foto = ctk.CTkLabel(
-            foto_row, text="Tidak ada file",
-            font=ctk.CTkFont(size=11), text_color=("gray50", "gray60")
-        )
-        ctk.CTkButton(
-            foto_row, text="Pilih Foto", height=28, width=80, corner_radius=6,
-            font=ctk.CTkFont(size=11), fg_color=("gray85", "gray25"), text_color=("gray20", "gray85"),
-            command=self._pilih_foto_admin
-        ).pack(side="left", padx=(0, 10))
-        self.lbl_admin_foto.pack(side="left")
+        if not is_actionable:
+            # ── READ-ONLY NOTICE ──
+            notice_bg = ("#FFF8E1", "#3E2E00")
+            notice_border = ("#FFD54F", "#B8860B")
+            notice = ctk.CTkFrame(af, fg_color=notice_bg, corner_radius=8,
+                                  border_width=1, border_color=notice_border)
+            notice.pack(fill="x", pady=(0, 6))
+            status_labels = {
+                "Diproses Kota": "diteruskan ke Kota",
+                "Selesai":       "dinyatakan Selesai",
+                "Ditolak":       "ditolak",
+            }
+            keterangan = status_labels.get(status_saat_ini, f"berstatus '{status_saat_ini}'")
+            ctk.CTkLabel(
+                notice,
+                text=f"⚠️  Laporan ini sudah {keterangan}. Tidak dapat diubah dari level Kecamatan.",
+                font=ctk.CTkFont(size=12),
+                text_color=("#795548", "#FFD54F"),
+                wraplength=700, anchor="w", justify="left"
+            ).pack(padx=14, pady=10)
+        else:
+            # Prioritas selector
+            pri_row = ctk.CTkFrame(af, fg_color="transparent")
+            pri_row.pack(fill="x", pady=(0, 10))
+            ctk.CTkLabel(pri_row, text="Prioritas Laporan",
+                         font=ctk.CTkFont(size=12, weight="bold"), anchor="w").pack(side="left", padx=(0, 10))
+            
+            current_pri = laporan.get("prioritas", "Rendah")
+            self.prioritas_var = ctk.StringVar(value=current_pri)
+            self.prioritas_combo = ctk.CTkComboBox(
+                pri_row, values=["Rendah", "Sedang", "Tinggi"],
+                variable=self.prioritas_var,
+                width=140, height=32, corner_radius=8,
+                font=ctk.CTkFont(size=12), state="readonly"
+            )
+            self.prioritas_combo.pack(side="left")
 
-        ctk.CTkLabel(af, text="Catatan Admin *",
-                     font=ctk.CTkFont(size=12, weight="bold"), anchor="w").pack(fill="x")
-        self.catatan_text = ctk.CTkTextbox(
-            af, height=60, corner_radius=8, font=ctk.CTkFont(size=12),
-            border_width=1, border_color=("gray70", "gray35"))
-        self.catatan_text.pack(fill="x", pady=(3, 12))
+            # Lampiran foto opsional
+            foto_row = ctk.CTkFrame(af, fg_color="transparent")
+            foto_row.pack(fill="x", pady=(10, 10))
+            ctk.CTkLabel(foto_row, text="Foto Selesai (Opsional)",
+                         font=ctk.CTkFont(size=12, weight="bold"), anchor="w").pack(side="left", padx=(0, 10))
+            
+            self.admin_foto_path = None
+            self.lbl_admin_foto = ctk.CTkLabel(
+                foto_row, text="Tidak ada file",
+                font=ctk.CTkFont(size=11), text_color=("gray50", "gray60")
+            )
+            ctk.CTkButton(
+                foto_row, text="Pilih Foto", height=28, width=80, corner_radius=6,
+                font=ctk.CTkFont(size=11), fg_color=("gray85", "gray25"), text_color=("gray20", "gray85"),
+                command=self._pilih_foto_admin
+            ).pack(side="left", padx=(0, 10))
+            self.lbl_admin_foto.pack(side="left")
 
-        btn_f = ctk.CTkFrame(af, fg_color="transparent")
-        btn_f.pack(fill="x")
-        for text, status, color in [
-            ("✅ Proses", "Diproses Kecamatan", "#1E88E5"),
-            ("🏁 Selesai", "Selesai", "#43A047"),
-            ("❌ Tolak", "Ditolak", "#E53935"),
-            ("⬆️ Eskalasi ke Kota", "Diproses Kota", "#7B1FA2"),
-        ]:
-            ctk.CTkButton(btn_f, text=text, height=36, corner_radius=8,
-                          font=ctk.CTkFont(size=12, weight="bold"),
-                          fg_color=color, hover_color=color,
-                          command=lambda s=status: self._proses(s)
-                          ).pack(side="left", padx=(0, 6))
+            ctk.CTkLabel(af, text="Catatan Admin *",
+                         font=ctk.CTkFont(size=12, weight="bold"), anchor="w").pack(fill="x")
+            self.catatan_text = ctk.CTkTextbox(
+                af, height=60, corner_radius=8, font=ctk.CTkFont(size=12),
+                border_width=1, border_color=("gray70", "gray35"))
+            self.catatan_text.pack(fill="x", pady=(3, 12))
+
+            btn_f = ctk.CTkFrame(af, fg_color="transparent")
+            btn_f.pack(fill="x")
+            for text, status, color in [
+                ("✅ Proses", "Diproses Kecamatan", "#1E88E5"),
+                ("🏁 Selesai", "Selesai", "#43A047"),
+                ("❌ Tolak", "Ditolak", "#E53935"),
+                ("⬆️ Eskalasi ke Kota", "Diproses Kota", "#7B1FA2"),
+            ]:
+                ctk.CTkButton(btn_f, text=text, height=36, corner_radius=8,
+                              font=ctk.CTkFont(size=12, weight="bold"),
+                              fg_color=color, hover_color=color,
+                              command=lambda s=status: self._proses(s)
+                              ).pack(side="left", padx=(0, 6))
+
 
         # ── Timeline ──
         tl_card = ctk.CTkFrame(c, corner_radius=12,
