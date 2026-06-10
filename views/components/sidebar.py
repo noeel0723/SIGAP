@@ -114,6 +114,21 @@ class Sidebar(ctk.CTkFrame):
         )
         theme_btn.pack(fill="x", pady=2)
 
+        # Tombol Ganti Password
+        pw_btn = ctk.CTkButton(
+            bottom_frame,
+            text="  🔑  Ganti Password",
+            anchor="w",
+            height=36,
+            corner_radius=8,
+            font=ctk.CTkFont(size=12),
+            fg_color="transparent",
+            text_color=("gray40", "gray70"),
+            hover_color=("gray80", "gray25"),
+            command=self._change_password
+        )
+        pw_btn.pack(fill="x", pady=2)
+
         # Tombol Logout
         logout_btn = ctk.CTkButton(
             bottom_frame,
@@ -137,6 +152,10 @@ class Sidebar(ctk.CTkFrame):
         current = ctk.get_appearance_mode()
         new_mode = "Light" if current == "Dark" else "Dark"
         ctk.set_appearance_mode(new_mode)
+
+    def _change_password(self):
+        from views.components.change_password_dialog import ChangePasswordDialog
+        ChangePasswordDialog(self, app=self.app)
 
     def _logout(self):
         from tkinter import messagebox

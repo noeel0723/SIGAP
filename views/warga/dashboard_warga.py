@@ -46,6 +46,7 @@ class DashboardWarga(ctk.CTkFrame):
         sidebar = Sidebar(self, app=app, menu_items=[
             {"icon": "🏠", "label": "Dashboard", "command": self._show_dashboard_page},
             {"icon": "📝", "label": "Buat Laporan", "command": self._show_form_page},
+            {"icon": "📋", "label": "Riwayat Laporan", "command": self._show_riwayat_page},
         ])
         sidebar.grid(row=0, column=0, sticky="nsw")
 
@@ -161,19 +162,19 @@ class DashboardWarga(ctk.CTkFrame):
         ts = ctk.CTkFrame(stats_row, fg_color="transparent")
         ts.pack(side="left", padx=(0, 30))
         ctk.CTkLabel(ts, text="↓  Total Laporan",
-                     font=ctk.CTkFont(size=10),
+                     font=ctk.CTkFont(size=12),
                      text_color=("gray50", "gray60")).pack(anchor="w")
         ctk.CTkLabel(ts, text=f"{total}",
-                     font=ctk.CTkFont(size=28, weight="bold")).pack(anchor="w")
+                     font=ctk.CTkFont(size=34, weight="bold")).pack(anchor="w")
 
         # Selesai stat
         ss = ctk.CTkFrame(stats_row, fg_color="transparent")
         ss.pack(side="left")
         ctk.CTkLabel(ss, text="↑  Selesai",
-                     font=ctk.CTkFont(size=10),
+                     font=ctk.CTkFont(size=12),
                      text_color=("gray50", "gray60")).pack(anchor="w")
         ctk.CTkLabel(ss, text=f"{selesai}",
-                     font=ctk.CTkFont(size=28, weight="bold")).pack(anchor="w")
+                     font=ctk.CTkFont(size=34, weight="bold")).pack(anchor="w")
 
         # Mini bar chart (status distribution)
         chart_f = ctk.CTkFrame(sc, fg_color="transparent", height=60)
@@ -201,17 +202,18 @@ class DashboardWarga(ctk.CTkFrame):
             ctk.CTkFrame(bar_col, fg_color=bar_colors.get(s_name, "gray"),
                          height=bar_h, corner_radius=3).pack(fill="x", side="bottom")
 
-        # Legend below bars
+        # Legend with counts below bars
         legend_f = ctk.CTkFrame(sc, fg_color="transparent")
         legend_f.pack(fill="x", pady=(6, 0))
         for s_name, color in bar_colors.items():
+            count = status_counts[s_name]
             lf = ctk.CTkFrame(legend_f, fg_color="transparent")
             lf.pack(side="left", expand=True)
             ctk.CTkLabel(lf, text="●", text_color=color,
-                         font=ctk.CTkFont(size=8)).pack(side="left")
-            ctk.CTkLabel(lf, text=f" {s_name}",
-                         font=ctk.CTkFont(size=9),
-                         text_color=("gray50", "gray60")).pack(side="left")
+                         font=ctk.CTkFont(size=9)).pack(side="left")
+            ctk.CTkLabel(lf, text=f" {s_name} ({count})",
+                         font=ctk.CTkFont(size=10),
+                         text_color=("gray45", "gray60")).pack(side="left")
 
         # ═══ Activity Cards (right) ═══
         activity_card = ctk.CTkFrame(
@@ -261,10 +263,10 @@ class DashboardWarga(ctk.CTkFrame):
             sub_clr = ("gray85", "gray85") if abg == (NAVY, NAVY) else ("gray50", "gray60")
 
             ctk.CTkLabel(ai, text=alabel,
-                         font=ctk.CTkFont(size=11),
+                         font=ctk.CTkFont(size=12),
                          text_color=sub_clr).pack(anchor="w")
             ctk.CTkLabel(ai, text=f"{aval}",
-                         font=ctk.CTkFont(size=28, weight="bold"),
+                         font=ctk.CTkFont(size=32, weight="bold"),
                          text_color=txt_clr).pack(anchor="w", pady=(4, 0))
 
             # Color accent line
@@ -291,10 +293,10 @@ class DashboardWarga(ctk.CTkFrame):
             scard.grid(row=0, column=i, sticky="ew", padx=(0 if i == 0 else 5, 5 if i == 0 else 0))
             si = ctk.CTkFrame(scard, fg_color="transparent")
             si.pack(fill="x", padx=18, pady=14)
-            ctk.CTkLabel(si, text=slabel, font=ctk.CTkFont(size=11),
+            ctk.CTkLabel(si, text=slabel, font=ctk.CTkFont(size=12),
                          text_color=("gray50", "gray60")).pack(anchor="w")
             ctk.CTkLabel(si, text=sval,
-                         font=ctk.CTkFont(size=22, weight="bold"),
+                         font=ctk.CTkFont(size=26, weight="bold"),
                          text_color=scolor).pack(anchor="w", pady=(2, 0))
 
         # ── Transactions History (Riwayat Laporan) ──
@@ -415,6 +417,190 @@ class DashboardWarga(ctk.CTkFrame):
 
                 # Separator
                 ctk.CTkFrame(hi, height=1, fg_color=("gray92", "gray25")).pack(fill="x")
+
+    # ══════════════════════════════════════════
+    # PAGE 1B : RIWAYAT LAPORAN
+    # ══════════════════════════════════════════
+
+    def _show_riwayat_page(self):
+        """Halaman khusus riwayat laporan dengan filter."""
+        self._clear_content()
+        self._load_data()
+        c = self.content
+        data = self.all_laporan
+
+        # ── Header ──
+        header = ctk.CTkFrame(c, fg_color="transparent")
+        header.pack(fill="x", padx=30, pady=(25, 20))
+
+        left = ctk.CTkFrame(header, fg_color="transparent")
+        left.pack(side="left")
+        ctk.CTkLabel(
+            left, text="📋  Riwayat Laporan",
+            font=ctk.CTkFont(size=24, weight="bold")
+        ).pack(anchor="w")
+        ctk.CTkLabel(
+            left, text="Semua laporan yang pernah Anda buat.",
+            font=ctk.CTkFont(size=13), text_color=("gray50", "gray60")
+        ).pack(anchor="w", pady=(2, 0))
+
+        # ── Filter Bar ──
+        filter_bar = ctk.CTkFrame(c, corner_radius=10,
+                                   fg_color=("white", "gray17"),
+                                   border_width=1, border_color=("gray88", "gray28"))
+        filter_bar.pack(fill="x", padx=30, pady=(0, 15))
+
+        fi = ctk.CTkFrame(filter_bar, fg_color="transparent")
+        fi.pack(fill="x", padx=16, pady=10)
+
+        ctk.CTkLabel(fi, text="Status:",
+                     font=ctk.CTkFont(size=12, weight="bold")).pack(side="left", padx=(0, 5))
+        self.riwayat_filter_var = ctk.StringVar(value="Semua")
+        ctk.CTkComboBox(
+            fi, values=["Semua", "Menunggu", "Diproses", "Selesai", "Ditolak"],
+            variable=self.riwayat_filter_var,
+            width=150, height=32, corner_radius=8,
+            font=ctk.CTkFont(size=12),
+            command=lambda _: self._filter_riwayat(), state="readonly"
+        ).pack(side="left", padx=(0, 15))
+
+        ctk.CTkButton(
+            fi, text="Reset", width=60, height=32, corner_radius=8,
+            font=ctk.CTkFont(size=11),
+            fg_color="transparent", border_width=1,
+            border_color=("gray72", "gray38"),
+            text_color=("gray30", "gray80"),
+            hover_color=("gray88", "gray25"),
+            command=self._reset_riwayat_filter
+        ).pack(side="left")
+
+        # ── Table ──
+        self._riwayat_data = data
+        self._riwayat_container = ctk.CTkFrame(c, fg_color="transparent")
+        self._riwayat_container.pack(fill="both", expand=True, padx=30, pady=(0, 20))
+        self._render_riwayat_table(data)
+
+    def _filter_riwayat(self):
+        status = self.riwayat_filter_var.get()
+        data = self.all_laporan
+        if status == "Diproses":
+            data = [d for d in data if "Diproses" in d.get("status", "")]
+        elif status != "Semua":
+            data = [d for d in data if d["status"] == status]
+        self._render_riwayat_table(data)
+
+    def _reset_riwayat_filter(self):
+        self.riwayat_filter_var.set("Semua")
+        self._render_riwayat_table(self.all_laporan)
+
+    def _render_riwayat_table(self, data):
+        """Render riwayat laporan table."""
+        container = self._riwayat_container
+        for w in container.winfo_children():
+            w.destroy()
+
+        table_card = ctk.CTkFrame(container, corner_radius=14,
+                                   fg_color=("white", "gray17"),
+                                   border_width=1, border_color=("gray88", "gray28"))
+        table_card.pack(fill="both", expand=True)
+
+        hi = ctk.CTkFrame(table_card, fg_color="transparent")
+        hi.pack(fill="both", expand=True, padx=24, pady=20)
+
+        ctk.CTkLabel(hi, text=f"{len(data)} laporan ditemukan",
+                     font=ctk.CTkFont(size=12),
+                     text_color=("gray50", "gray60")).pack(anchor="w", pady=(0, 10))
+
+        # Table header
+        ht = ctk.CTkFrame(hi, fg_color=("gray94", "gray20"),
+                          corner_radius=6, height=36)
+        ht.pack(fill="x")
+        ht.pack_propagate(False)
+
+        hist_cols = [
+            ("Judul", 220), ("No. Laporan", 110),
+            ("Status", 150), ("Tanggal", 130), ("Kategori", 150),
+        ]
+        for col_label, w in hist_cols:
+            ctk.CTkLabel(
+                ht, text=col_label, width=w,
+                font=ctk.CTkFont(size=11, weight="bold"),
+                text_color=("gray45", "gray65"), anchor="w"
+            ).pack(side="left", padx=(14, 0), pady=8)
+
+        # Scrollable rows
+        scroll = ctk.CTkScrollableFrame(hi, fg_color="transparent", height=400)
+        scroll.pack(fill="both", expand=True, pady=(4, 0))
+
+        if not data:
+            ctk.CTkLabel(
+                scroll, text="Tidak ada laporan.",
+                font=ctk.CTkFont(size=13),
+                text_color=("gray50", "gray60")
+            ).pack(pady=30)
+            return
+
+        for idx, lap in enumerate(data):
+            row_bg = ("white", "gray17") if idx % 2 == 0 else ("gray98", "gray15")
+            rr = ctk.CTkFrame(scroll, fg_color=row_bg, height=44, corner_radius=4)
+            rr.pack(fill="x", pady=1)
+            rr.pack_propagate(False)
+
+            c0 = ctk.CTkFrame(rr, fg_color="transparent", width=220, height=44)
+            c0.pack(side="left", padx=(14, 0))
+            c0.pack_propagate(False)
+            ctk.CTkLabel(
+                c0, text=truncate_text(lap.get("judul", ""), 28),
+                font=ctk.CTkFont(size=12, weight="bold"), anchor="w"
+            ).pack(side="left", pady=8)
+
+            c1 = ctk.CTkFrame(rr, fg_color="transparent", width=110, height=44)
+            c1.pack(side="left", padx=(14, 0))
+            c1.pack_propagate(False)
+            ctk.CTkLabel(
+                c1, text=f"#LP{lap['id']:06d}",
+                font=ctk.CTkFont(size=12),
+                text_color=(TEAL, SKY_BLUE), anchor="w"
+            ).pack(side="left", pady=8)
+
+            c2 = ctk.CTkFrame(rr, fg_color="transparent", width=150, height=44)
+            c2.pack(side="left", padx=(14, 0))
+            c2.pack_propagate(False)
+            st_color = STATUS_DOT_COLORS.get(lap["status"], "#95a5a6")
+            ctk.CTkLabel(
+                c2, text=f"●  {lap['status']}",
+                font=ctk.CTkFont(size=11),
+                text_color=st_color, anchor="w"
+            ).pack(side="left", pady=8)
+
+            c3 = ctk.CTkFrame(rr, fg_color="transparent", width=130, height=44)
+            c3.pack(side="left", padx=(14, 0))
+            c3.pack_propagate(False)
+            ctk.CTkLabel(
+                c3, text=format_tanggal(lap.get("created_at")),
+                font=ctk.CTkFont(size=11),
+                text_color=("gray50", "gray60"), anchor="w"
+            ).pack(side="left", pady=8)
+
+            c4 = ctk.CTkFrame(rr, fg_color="transparent", width=150, height=44)
+            c4.pack(side="left", padx=(14, 0))
+            c4.pack_propagate(False)
+            ctk.CTkLabel(
+                c4, text=truncate_text(lap.get("kategori", ""), 20),
+                font=ctk.CTkFont(size=11), anchor="w"
+            ).pack(side="left", pady=8)
+
+            def _bind_click(widget, d=lap):
+                widget.bind("<Button-1>", lambda e: self._show_detail_page(d))
+                if hasattr(widget, "winfo_children"):
+                    for child in widget.winfo_children():
+                        _bind_click(child, d)
+            _bind_click(rr)
+
+            rr.bind("<Enter>", lambda e, r=rr: r.configure(fg_color=("gray92", "gray22")))
+            rr.bind("<Leave>", lambda e, r=rr, b=row_bg: r.configure(fg_color=b))
+
+            ctk.CTkFrame(scroll, height=1, fg_color=("gray92", "gray25")).pack(fill="x")
 
     # ══════════════════════════════════════════
     # PAGE 2 : BUAT LAPORAN (Support Ticket-style)

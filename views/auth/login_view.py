@@ -169,6 +169,36 @@ class LoginView(ctk.CTkFrame):
         else:
             self.error_label.configure(text=result["message"])
             self.login_btn.configure(state="normal", text="Masuk")
+            
+            # Handle rate limiting freeze
+            if result.get("locked"):
+                self._start_countdown(result.get("locked_seconds", 60))
+    
+    def _start_countdown(self, seconds):
+        """Start countdown timer when account is frozen."""
+        self.login_btn.configure(state="disabled")
+        self.email_entry.configure(state="disabled")
+        self.password_entry.configure(state="disabled")
+        self._countdown_remaining = seconds
+        self._tick_countdown()
+    
+    def _tick_countdown(self):
+        """Tick the countdown every second."""
+        if self._countdown_remaining <= 0:
+            self.login_btn.configure(state="normal", text="Masuk")
+            self.email_entry.configure(state="normal")
+            self.password_entry.configure(state="normal")
+            self.error_label.configure(text="Anda bisa mencoba login kembali.")
+            return
+        
+        mins = self._countdown_remaining // 60
+        secs = self._countdown_remaining % 60
+        self.login_btn.configure(text=f"Tunggu {mins:01d}:{secs:02d}")
+        self.error_label.configure(
+            text=f"⏳ Terlalu banyak percobaan. Tunggu {mins} menit {secs} detik."
+        )
+        self._countdown_remaining -= 1
+        self.after(1000, self._tick_countdown)
 
     def _show_register(self):
         from views.auth.register_view import RegisterView

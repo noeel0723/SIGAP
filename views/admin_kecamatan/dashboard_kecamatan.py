@@ -2,7 +2,7 @@
 # Dashboard untuk Admin Kecamatan — matching kelurahan style with detail page
 
 import customtkinter as ctk
-from tkinter import messagebox
+from views.components.confirmation_dialog import ConfirmationDialog, ResultDialog
 from controllers.laporan_controller import LaporanController
 from views.components.sidebar import Sidebar
 from views.components.status_badge import StatusBadge
@@ -127,6 +127,57 @@ class DashboardKecamatan(ctk.CTkFrame):
             command=lambda _: self._apply_filter(), state="readonly"
         ).pack(side="left")
 
+        ctk.CTkLabel(filter_bar, text="Dari:",
+                     font=ctk.CTkFont(size=12, weight="bold")).pack(side="left", padx=(15, 5))
+        self.date_from_var = ctk.StringVar(value="")
+        self.date_from_entry = ctk.CTkEntry(
+            filter_bar, textvariable=self.date_from_var,
+            width=110, height=32, corner_radius=8,
+            placeholder_text="YYYY-MM-DD", font=ctk.CTkFont(size=11),
+            state="readonly"
+        )
+        self.date_from_entry.pack(side="left", padx=(0, 2))
+        ctk.CTkButton(
+            filter_bar, text="📅", width=32, height=32, corner_radius=8,
+            font=ctk.CTkFont(size=14), fg_color=("gray85", "gray25"),
+            hover_color=("gray75", "gray35"), text_color=("gray30", "gray80"),
+            command=lambda: self._show_date_picker(self.date_from_var)
+        ).pack(side="left", padx=(0, 8))
+
+        ctk.CTkLabel(filter_bar, text="Sampai:",
+                     font=ctk.CTkFont(size=12, weight="bold")).pack(side="left", padx=(0, 5))
+        self.date_to_var = ctk.StringVar(value="")
+        self.date_to_entry = ctk.CTkEntry(
+            filter_bar, textvariable=self.date_to_var,
+            width=110, height=32, corner_radius=8,
+            placeholder_text="YYYY-MM-DD", font=ctk.CTkFont(size=11),
+            state="readonly"
+        )
+        self.date_to_entry.pack(side="left", padx=(0, 2))
+        ctk.CTkButton(
+            filter_bar, text="📅", width=32, height=32, corner_radius=8,
+            font=ctk.CTkFont(size=14), fg_color=("gray85", "gray25"),
+            hover_color=("gray75", "gray35"), text_color=("gray30", "gray80"),
+            command=lambda: self._show_date_picker(self.date_to_var)
+        ).pack(side="left", padx=(0, 8))
+
+        ctk.CTkButton(
+            filter_bar, text="🔍", width=36, height=32, corner_radius=8,
+            font=ctk.CTkFont(size=14),
+            fg_color=(TEAL, TEAL), hover_color=(NAVY, NAVY),
+            command=lambda: self._apply_filter()
+        ).pack(side="left", padx=(0, 4))
+
+        ctk.CTkButton(
+            filter_bar, text="Reset", width=55, height=32, corner_radius=8,
+            font=ctk.CTkFont(size=11),
+            fg_color="transparent", border_width=1,
+            border_color=("gray72", "gray38"),
+            text_color=("gray30", "gray80"),
+            hover_color=("gray88", "gray25"),
+            command=self._reset_filter
+        ).pack(side="left")
+
         # ── Table ──
         self._all_data = data
         self._build_table(data)
@@ -243,7 +294,70 @@ class DashboardKecamatan(ctk.CTkFrame):
         if kel and kel != "Semua":
             data = [d for d in data if d.get("kelurahan") == kel]
 
+        # Apply date filter
+        date_from = self.date_from_var.get().strip() if hasattr(self, 'date_from_var') else ""
+        date_to = self.date_to_var.get().strip() if hasattr(self, 'date_to_var') else ""
+        if date_from:
+            data = [d for d in data if str(d.get("created_at", ""))[:10] >= date_from]
+        if date_to:
+            data = [d for d in data if str(d.get("created_at", ""))[:10] <= date_to]
+
         self._build_table(data)
+
+    def _reset_filter(self):
+        self.kel_filter_var.set("Semua")
+        self.status_filter_var.set("Semua")
+        if hasattr(self, 'date_from_var'):
+            self.date_from_var.set("")
+        if hasattr(self, 'date_to_var'):
+            self.date_to_var.set("")
+        self._apply_filter()
+
+    def _show_date_picker(self, target_var):
+        """Show a date picker popup using tkcalendar."""
+        try:
+            from tkcalendar import Calendar
+        except ImportError:
+            return
+        
+        picker = ctk.CTkToplevel(self)
+        picker.title("Pilih Tanggal")
+        picker.geometry("300x300")
+        picker.resizable(False, False)
+        picker.configure(fg_color=("white", "gray17"))
+        
+        picker.update_idletasks()
+        x = (picker.winfo_screenwidth() // 2) - 150
+        y = (picker.winfo_screenheight() // 2) - 150
+        picker.geometry(f"+{x}+{y}")
+        
+        picker.transient(self.winfo_toplevel())
+        picker.grab_set()
+        
+        import datetime
+        today = datetime.date.today()
+        
+        cal = Calendar(
+            picker, selectmode='day',
+            year=today.year, month=today.month, day=today.day,
+            date_pattern='yyyy-mm-dd'
+        )
+        cal.pack(fill="both", expand=True, padx=10, pady=(10, 5))
+        
+        def pick():
+            target_var.set(cal.get_date())
+            picker.grab_release()
+            picker.destroy()
+            self._apply_filter()
+        
+        ctk.CTkButton(
+            picker, text="Pilih", height=34, corner_radius=8,
+            font=ctk.CTkFont(size=12, weight="bold"),
+            fg_color=(TEAL, TEAL), hover_color=(NAVY, NAVY),
+            command=pick
+        ).pack(fill="x", padx=10, pady=(0, 10))
+        
+        picker.protocol("WM_DELETE_WINDOW", lambda: (picker.grab_release(), picker.destroy()))
 
     # ══════════════════════════════════════════
     # DETAIL PAGE  (Warga-style)
@@ -428,20 +542,55 @@ class DashboardKecamatan(ctk.CTkFrame):
     def _proses(self, status_baru: str):
         if not self.selected_laporan:
             return
-        catatan = self.catatan_text.get("1.0", "end-1c")
-        prioritas = self.prioritas_var.get() if hasattr(self, 'prioritas_var') else None
-        result = self.laporan_ctrl.proses_laporan(
-            laporan_id=self.selected_laporan["id"],
-            admin_id=self.app.current_user["id"],
-            status_baru=status_baru, catatan=catatan,
-            prioritas=prioritas,
-            foto_selesai_path=self.admin_foto_path
+        
+        action_labels = {
+            'Diproses Kecamatan': 'memproses laporan ini di tingkat Kecamatan',
+            'Selesai': 'menandai laporan ini sebagai SELESAI',
+            'Ditolak': 'MENOLAK laporan ini',
+            'Diproses Kota': 'mengeskalasi laporan ini ke tingkat Kota',
+        }
+        action_icons = {
+            'Diproses Kecamatan': '🔄',
+            'Selesai': '✅',
+            'Ditolak': '❌',
+            'Diproses Kota': '⬆️',
+        }
+        action_colors = {
+            'Diproses Kecamatan': '#1E88E5',
+            'Selesai': '#43A047',
+            'Ditolak': '#E53935',
+            'Diproses Kota': '#7B1FA2',
+        }
+        
+        label = action_labels.get(status_baru, status_baru)
+        icon = action_icons.get(status_baru, '⚡')
+        color = action_colors.get(status_baru, '#1E88E5')
+        
+        def do_action():
+            catatan = self.catatan_text.get("1.0", "end-1c")
+            prioritas = self.prioritas_var.get() if hasattr(self, 'prioritas_var') else None
+            result = self.laporan_ctrl.proses_laporan(
+                laporan_id=self.selected_laporan["id"],
+                admin_id=self.app.current_user["id"],
+                status_baru=status_baru, catatan=catatan,
+                prioritas=prioritas,
+                foto_selesai_path=self.admin_foto_path
+            )
+            if result["success"]:
+                ResultDialog(self, success=True, message=result["message"],
+                             on_close=self._show_main)
+            else:
+                ResultDialog(self, success=False, message=result["message"])
+        
+        ConfirmationDialog(
+            self,
+            title="Konfirmasi Tindakan",
+            message=f"Apakah Anda yakin ingin {label}?",
+            icon_text=icon,
+            confirm_text="Ya, Lanjutkan",
+            confirm_color=color,
+            on_confirm=do_action
         )
-        if result["success"]:
-            messagebox.showinfo("Berhasil", result["message"])
-            self._show_main()
-        else:
-            messagebox.showerror("Gagal", result["message"])
 
     def _pilih_foto_admin(self):
         import tkinter.filedialog as fd
