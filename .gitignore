@@ -19,6 +19,7 @@ env/
 build/
 dist/SIGAP_Admin/_internal/
 dist/SIGAP_Warga/_internal/
+dist/SIGAP/_internal/
 *.spec.bak
 
 # Setup
